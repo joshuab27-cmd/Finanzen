@@ -1,5 +1,26 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Vier-Monats-Finanzplan</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Gehalt, Ausgaben und ETF-Sparplan in Vier-Monats-Fenstern planen.">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Finanzplan">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+html, body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
@@ -131,6 +152,10 @@ nav.tabs {
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 }
+.gear { border: 0; background: var(--chip); color: var(--ink); width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; }
+textarea.in { font: inherit; font-size: 0.8rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; width: 100%; min-height: 110px; resize: vertical; font-family: ui-monospace, Menlo, monospace; }
+.ok-msg { color: var(--up); font-weight: 600; font-size: 0.9rem; margin: 0; }
+.err-msg { color: var(--down); font-weight: 600; font-size: 0.9rem; margin: 0; }
 nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
 .lvl { display: inline-block; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--chip); color: var(--muted); }
 .lvl.unnoetig { background: color-mix(in srgb, var(--down) 18%, transparent); color: var(--down); }
@@ -159,7 +184,12 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
 <div class="app">
   <div class="topbar">
     <span class="title" id="pageTitle">Übersicht</span>
-    <span class="save" id="save" data-s="local">Wird geladen …</span>
+    <span style="display:flex;align-items:center;gap:8px">
+      <span class="save" id="save" data-s="local">Wird geladen …</span>
+      <button class="gear" data-tab="data" aria-label="Daten und Backup">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>
+      </button>
+    </span>
   </div>
   <div class="banner" id="banner" hidden>
     <span><strong>Beispielwerte.</strong> Ersetze sie durch deine Zahlen.</span>
@@ -266,7 +296,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     if (!dirty) return;
     dirty = false;
     const ok = localSave();
-    if (!saveTarget) { setSave("local", ok ? "Nur in diesem Browser" : "Speichern nicht möglich"); return; }
+    if (!saveTarget) { setSave("local", ok ? "Auf diesem Gerät gespeichert" : "Speichern nicht möglich"); return; }
     saving = true;
     try {
       await saveTarget.set({ plan: JSON.parse(JSON.stringify(state)), savedAt: new Date().toISOString() });
@@ -278,7 +308,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     const local = localLoad();
     if (local && local.windows?.length) state = migrate(local);
     render();
-    setSave("local", local ? "Nur in diesem Browser" : "Noch nicht gespeichert");
+    setSave("local", local ? "Auf diesem Gerät gespeichert" : "Noch nicht gespeichert");
     const c = window.claude;
     if (!c?.use) return;
     try {
@@ -380,7 +410,10 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   }
 
   // ---------- Ansichten ----------
-  const TITLES = { overview: "Übersicht", expenses: "Ausgaben", savings: "Sparen", analysis: "Analyse" };
+  const TITLES = { overview: "Übersicht", expenses: "Ausgaben", savings: "Sparen", analysis: "Analyse", data: "Daten & Backup" };
+  const IN_CLAUDE = !!window.claude?.use;
+  let installEvt = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (ui.tab === "data") render(); });
   function render() {
     state.active = activeWin().id;
     $("banner").hidden = !state.example;
@@ -389,7 +422,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     });
     $("pageTitle").textContent = TITLES[ui.tab];
     if (!TITLES[ui.tab]) ui.tab = "overview";
-    ({ overview: renderOverview, expenses: renderExpenses, savings: renderSavings, analysis: renderAnalysis })[ui.tab]();
+    ({ overview: renderOverview, expenses: renderExpenses, savings: renderSavings, analysis: renderAnalysis, data: renderData })[ui.tab]();
   }
 
   function windowChips() {
@@ -660,6 +693,76 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       ${levelSeg(g.key, g.level, g.name)}</div>`;
   }
 
+  // ---------- Daten & Backup ----------
+  const exportJson = () => JSON.stringify({ app: "vier-monats-finanzplan", version: 1, exportedAt: new Date().toISOString(), plan: state });
+  function parseImport(text) {
+    let d; try { d = JSON.parse(text); } catch { return null; }
+    const plan = d?.plan || d;
+    if (!Array.isArray(plan?.windows) || !plan.windows.length || !plan.windows.every(w => w.start && w.months && Array.isArray(w.fixed))) return null;
+    plan.etfs = Array.isArray(plan.etfs) ? plan.etfs : [];
+    plan.example = false;
+    return plan;
+  }
+  let pendingImport = null;
+  function renderData() {
+    const standalone = window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone;
+    $("view").innerHTML = `
+      <section class="section">
+        <h2>Speicherort</h2>
+        <p class="hint">${IN_CLAUDE
+          ? "Diese Version läuft in Claude und speichert in deinem Claude-Konto. Mit „Daten kopieren“ kannst du alles in die Web-App übernehmen."
+          : "Deine Daten werden nur auf diesem Gerät im Browser gespeichert. Es geht nichts an einen Server. Mach ab und zu ein Backup, zum Beispiel bevor du den Browser-Verlauf löschst oder das Handy wechselst."}</p>
+        <p class="hint" id="persistInfo"></p>
+      </section>
+      ${!IN_CLAUDE && !standalone ? `<section class="section">
+        <h2>Als App installieren</h2>
+        ${installEvt ? `<button class="btn" id="installBtn" style="justify-self:start">App installieren</button>` : ""}
+        <p class="hint"><strong>iPhone:</strong> In Safari öffnen, unten auf „Teilen“ tippen, dann „Zum Home-Bildschirm“.<br>
+        <strong>Android:</strong> In Chrome oben rechts auf ⋮ tippen, dann „App installieren“ oder „Zum Startbildschirm hinzufügen“.<br>
+        <strong>Computer:</strong> In Chrome oder Edge in der Adressleiste auf das Installieren-Symbol klicken.</p>
+      </section>` : ""}
+      <section class="section">
+        <h2>Backup erstellen</h2>
+        <div class="row-actions">
+          ${IN_CLAUDE ? "" : `<button class="btn" id="exportFile">Backup-Datei speichern</button>`}
+          <button class="btn ${IN_CLAUDE ? "" : "soft"}" id="exportCopy">Daten kopieren</button>
+        </div>
+        <p class="hint" id="exportMsg"></p>
+        <textarea class="in" id="exportText" readonly hidden aria-label="Exportierte Daten"></textarea>
+      </section>
+      <section class="section">
+        <h2>Daten übernehmen</h2>
+        <p class="hint">Füge kopierte Daten ein oder wähle eine Backup-Datei. Das ersetzt alle Daten in dieser App.</p>
+        <textarea class="in" id="importText" placeholder="Hier die kopierten Daten einfügen …" aria-label="Daten zum Importieren"></textarea>
+        <div class="row-actions">
+          <button class="btn" id="importPaste">Eingefügte Daten prüfen</button>
+          <label class="btn soft" for="importFile" style="cursor:pointer">Backup-Datei wählen</label>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+        </div>
+        <div id="importMsg" style="display:grid;gap:10px"></div>
+      </section>
+      <section class="section">
+        <h2>Neu anfangen</h2>
+        <div class="row-actions" id="resetWrap"><button class="btn danger" id="resetAll">Alle Daten löschen</button></div>
+      </section>`;
+    if (!IN_CLAUDE && navigator.storage?.persisted) navigator.storage.persisted().then(p => {
+      const el = $("persistInfo"); if (el) el.textContent = p ? "Der Browser hat dauerhaften Speicher zugesagt." : "Tipp: Als App installiert bleiben die Daten am zuverlässigsten erhalten.";
+    }).catch(() => {});
+  }
+  function showImport(plan) {
+    pendingImport = plan;
+    const months = plan.windows.reduce((a, w) => a + Object.keys(w.months).length, 0);
+    $("importMsg").innerHTML = plan
+      ? `<p class="ok-msg">Gefunden: ${plan.windows.length} Planungsfenster, ${months} Monate, ${plan.etfs.length} ETFs.</p>
+         <div class="row-actions"><button class="btn" id="importYes">Jetzt übernehmen</button><button class="btn soft" id="importNo">Abbrechen</button></div>`
+      : "";
+  }
+  async function copyExport() {
+    const text = exportJson();
+    try { await navigator.clipboard.writeText(text); $("exportMsg").textContent = IN_CLAUDE ? "Kopiert. Öffne jetzt die Web-App, tippe auf das Pfeil-Symbol oben rechts und füge die Daten unter „Daten übernehmen“ ein." : "Kopiert."; $("exportText").hidden = true; }
+    catch { const ta = $("exportText"); ta.hidden = false; ta.value = text; ta.focus(); ta.select(); $("exportMsg").textContent = "Kopieren war nicht möglich. Markiere den Text unten und kopiere ihn von Hand."; }
+  }
+
   function updateHero(p, n = ui.horizon, label) {
     const r = projectAll(n), gain = r.value - r.paid;
     if (!$(p + "Big")) return;
@@ -774,10 +877,46 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       case "delNo": render(); break;
       case "delYes": state.windows = state.windows.filter(x => x.id !== activeWin().id); state.active = sortedWins()[0].id; ui.month = null; render(); changed(); break;
       case "clearExample": state = emptyState(); render(); changed(); break;
+      case "exportCopy": copyExport(); break;
+      case "exportFile": {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([exportJson()], { type: "application/json" }));
+        a.download = `finanzplan-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        $("exportMsg").textContent = "Backup-Datei gespeichert."; break;
+      }
+      case "importPaste": {
+        const plan = parseImport($("importText").value);
+        if (plan) showImport(plan); else $("importMsg").innerHTML = `<p class="err-msg">Das sind keine gültigen Finanzplan-Daten. Kopiere sie noch einmal vollständig.</p>`;
+        break;
+      }
+      case "importYes": state = migrate(pendingImport); pendingImport = null; ui.tab = "overview"; render(); changed(); window.scrollTo(0, 0); break;
+      case "importNo": pendingImport = null; $("importMsg").innerHTML = ""; break;
+      case "installBtn": installEvt?.prompt(); installEvt = null; break;
+      case "resetAll": $("resetWrap").innerHTML = `<span>Wirklich alles löschen?</span><button class="btn danger" id="resetYes">Löschen</button><button class="btn soft" id="resetNo">Abbrechen</button>`; break;
+      case "resetNo": render(); break;
+      case "resetYes": state = emptyState(); ui.tab = "overview"; render(); changed(); break;
     }
   });
 
+  document.addEventListener("change", e => {
+    if (e.target.id !== "importFile" || !e.target.files?.[0]) return;
+    e.target.files[0].text().then(text => {
+      const plan = parseImport(text);
+      if (plan) showImport(plan); else $("importMsg").innerHTML = `<p class="err-msg">Diese Datei ist kein gültiges Finanzplan-Backup.</p>`;
+    });
+  });
+  if (!IN_CLAUDE) navigator.storage?.persist?.().catch(() => {});
   window.addEventListener("beforeunload", () => { if (dirty) localSave(); });
   boot();
 })();
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
