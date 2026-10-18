@@ -131,7 +131,19 @@ nav.tabs {
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
 }
-nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); }
+nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+.lvl { display: inline-block; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--chip); color: var(--muted); }
+.lvl.hoch { background: color-mix(in srgb, var(--down) 18%, transparent); color: var(--down); }
+.lvl.mittel { background: var(--chip); color: var(--ink); }
+.lvl.gering { background: color-mix(in srgb, var(--up) 16%, transparent); color: var(--up); }
+.meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.meter span { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--surface); border-radius: 999px; padding: 4px; }
+.seg button { border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 9px 6px; font-weight: 700; font-size: 0.86rem; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg.small { display: inline-grid; padding: 3px; }
+.seg.small button { padding: 5px 9px; font-size: 0.74rem; }
+.hint { font-size: 0.86rem; color: var(--muted); margin: 0; }
 nav.tabs button { border: 0; background: transparent; color: var(--muted); display: grid; justify-items: center; gap: 3px; padding: 4px 0; font-size: 0.74rem; font-weight: 700; }
 nav.tabs button svg { width: 24px; height: 24px; }
 nav.tabs button[aria-current="page"] { color: var(--ink); }
@@ -158,6 +170,8 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>Ausgaben</button>
     <button data-tab="savings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Sparen</button>
+    <button data-tab="analysis">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8 11h6"/></svg>Analyse</button>
   </div>
 </nav>
 
@@ -191,6 +205,10 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     [0, 1, 2, 3].forEach(i => { months[addMonths(start, i)] = { salary: 2600, extras: [] }; });
     months[addMonths(start, 1)].extras.push({ id: uid(), name: "Geschenke", amount: 150 });
     months[addMonths(start, 2)].extras.push({ id: uid(), name: "Kfz-Versicherung (jährlich)", amount: 420 });
+    [0, 1, 2, 3].forEach(i => months[addMonths(start, i)].extras.push({ id: uid(), name: "Essen bestellen", amount: [38, 52, 45, 60][i] }));
+    months[addMonths(start, 0)].extras.push({ id: uid(), name: "Kleidung", amount: 90 });
+    months[addMonths(start, 3)].extras.push({ id: uid(), name: "Kleidung", amount: 120 });
+    months[addMonths(start, 1)].extras.push({ id: uid(), name: "Konzert", amount: 75 });
     const w = { id: uid(), start, fixed: [
       { id: uid(), name: "Miete warm", amount: 850 },
       { id: uid(), name: "Strom", amount: 65 },
@@ -271,21 +289,88 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   // ---------- Berechnung ----------
   const sum = arr => arr.reduce((a, x) => a + (+x.amount || 0), 0);
   const etfMonthly = () => state.etfs.reduce((a, e) => a + (+e.rate || 0), 0);
+  // Sparrate einer Monatsplanung: normal, reduziert (Betrag je ETF) oder ausgesetzt
+  function etfRateIn(m, e) {
+    const mode = m?.save?.mode;
+    if (mode === "paused") return 0;
+    if (mode === "reduced") { const v = m.save.rates?.[e.id]; return v == null ? (+e.rate || 0) : (+v || 0); }
+    return +e.rate || 0;
+  }
+  const monthSave = m => state.etfs.reduce((a, e) => a + etfRateIn(m, e), 0);
+  function monthIndex() {
+    const idx = new Map();
+    sortedWins().forEach(w => windowMonths(w).forEach(k => { if (w.months[k]) idx.set(k, w.months[k]); }));
+    return idx;
+  }
   const etfInvested = () => state.etfs.reduce((a, e) => a + (+e.start || 0), 0);
   function monthCalc(w, key) {
     const m = monthData(w, key);
-    const salary = +m.salary || 0, fixed = sum(w.fixed), extras = sum(m.extras), save = etfMonthly();
+    const salary = +m.salary || 0, fixed = sum(w.fixed), extras = sum(m.extras), save = monthSave(m);
     return { salary, fixed, extras, save, rest: salary - fixed - extras - save };
   }
-  function project(e, months) {
-    const r = Math.pow(1 + (+e.ret || 0) / 100, 1 / 12) - 1;
-    const rate = +e.rate || 0, start = +e.start || 0, g = Math.pow(1 + r, months);
-    return { value: start * g + (r === 0 ? rate * months : rate * (g - 1) / r), paid: start + rate * months };
+  // Monat für Monat: Einzahlung am Monatsende, geplante Reduzierungen/Pausen werden berücksichtigt
+  function project(e, months, idx = monthIndex()) {
+    const r = Math.pow(1 + (+e.ret || 0) / 100, 1 / 12) - 1, now = ym(new Date());
+    let value = +e.start || 0, paid = value;
+    for (let n = 1; n <= months; n++) {
+      const c = etfRateIn(idx.get(addMonths(now, n - 1)), e);
+      value = value * (1 + r) + c; paid += c;
+    }
+    return { value, paid };
   }
-  const projectAll = months => state.etfs.reduce((a, e) => { const p = project(e, months); a.value += p.value; a.paid += p.paid; return a; }, { value: 0, paid: 0 });
+  const projectAll = months => { const idx = monthIndex(); return state.etfs.reduce((a, e) => { const p = project(e, months, idx); a.value += p.value; a.paid += p.paid; return a; }, { value: 0, paid: 0 }); };
+  function projectSeries(N) {
+    const idx = monthIndex(), now = ym(new Date());
+    const st = state.etfs.map(e => ({ e, r: Math.pow(1 + (+e.ret || 0) / 100, 1 / 12) - 1, v: +e.start || 0 }));
+    let paid = st.reduce((a, x) => a + x.v, 0);
+    const out = [{ value: paid, paid }];
+    for (let n = 1; n <= N; n++) {
+      const m = idx.get(addMonths(now, n - 1));
+      let value = 0;
+      st.forEach(x => { const c = etfRateIn(m, x.e); x.v = x.v * (1 + x.r) + c; paid += c; value += x.v; });
+      out.push({ value, paid });
+    }
+    return out;
+  }
+
+  // ---------- Analyse einmaliger Ausgaben ----------
+  const CATEGORIES = [
+    { name: "Versicherungen & Gebühren", score: 5, words: ["versicherung", "beitrag", "gebühr", "steuer", "rundfunk", "gez", "kontoführung", "mitgliedsbeitrag"] },
+    { name: "Gesundheit", score: 10, words: ["arzt", "zahn", "apotheke", "medikament", "brille", "kontaktlinsen", "physio", "rezept"] },
+    { name: "Essen & Lieferdienste", score: 90, words: ["essen bestellen", "bestellt", "liefer", "lieferando", "wolt", "uber eats", "restaurant", "döner", "pizza", "burger", "mcdonald", "imbiss", "takeaway", "essen gehen", "café", "cafe", "kaffee", "snack", "bäcker"] },
+    { name: "Shopping & Kleidung", score: 75, words: ["kleidung", "klamotten", "schuhe", "shopping", "amazon", "zalando", "mode", "jacke", "hose", "deko", "kosmetik", "parfum", "online-bestellung"] },
+    { name: "Ausgehen & Freizeit", score: 70, words: ["bar", "club", "party", "kino", "konzert", "festival", "feiern", "alkohol", "getränke", "bowling", "ausgehen", "freizeit", "tickets", "event"] },
+    { name: "Abos & Apps", score: 65, words: ["abo", "app", "in-app", "spotify", "netflix", "disney", "prime", "premium", "mitgliedschaft"] },
+    { name: "Elektronik & Gaming", score: 60, words: ["elektronik", "handy", "smartphone", "laptop", "tablet", "gaming", "spiel", "playstation", "xbox", "nintendo", "steam", "kopfhörer", "konsole", "pc"] },
+    { name: "Reisen & Urlaub", score: 45, words: ["urlaub", "reise", "flug", "hotel", "airbnb", "trip", "ausflug", "wochenende"] },
+    { name: "Geschenke", score: 35, words: ["geschenk", "geburtstag", "weihnacht", "hochzeit"] },
+    { name: "Haushalt & Reparatur", score: 25, words: ["reparatur", "waschmaschine", "kühlschrank", "möbel", "haushalt", "handwerker", "werkzeug", "renovier"] },
+    { name: "Auto & Mobilität", score: 20, words: ["tanken", "benzin", "diesel", "werkstatt", "tüv", "reifen", "bahn", "deutschlandticket", "kfz", "auto", "parken"] },
+  ];
+  const AVOID_LEVELS = { hoch: { label: "Gut vermeidbar", f: 0.9 }, mittel: { label: "Teilweise", f: 0.5 }, gering: { label: "Notwendig", f: 0 } };
+  const levelOf = score => score >= 65 ? "hoch" : score >= 30 ? "mittel" : "gering";
+  const normName = s => String(s || "").toLowerCase().replace(/\(.*?\)/g, "").replace(/\s+/g, " ").trim();
+  const categorize = name => { const n = normName(name); return CATEGORIES.find(c => c.words.some(w => n.includes(w))) || { name: "Sonstiges", score: 50 }; };
+  function analyzeExtras() {
+    const groups = new Map(); let total = 0, count = 0; const months = new Set();
+    sortedWins().forEach(w => windowMonths(w).forEach(k => {
+      const m = w.months[k]; if (!m) return; months.add(k);
+      m.extras.forEach(x => {
+        const amt = +x.amount || 0; if (!amt && !x.name) return;
+        const key = normName(x.name) || "ohne namen";
+        const g = groups.get(key) || { key, name: (x.name || "Ohne Namen").replace(/\s*\(.*?\)/g, "").trim() || "Ohne Namen", count: 0, total: 0, months: new Set(), cat: categorize(x.name) };
+        g.count++; g.total += amt; g.months.add(k); groups.set(key, g); total += amt; count++;
+      });
+    }));
+    const list = [...groups.values()].map(g => {
+      const level = state.avoid?.[g.key] || levelOf(g.cat.score);
+      return { ...g, level, own: !!state.avoid?.[g.key], avoidable: g.total * AVOID_LEVELS[level].f };
+    });
+    return { list, total, count, months: months.size || 1 };
+  }
 
   // ---------- Ansichten ----------
-  const TITLES = { overview: "Übersicht", expenses: "Ausgaben", savings: "Sparen" };
+  const TITLES = { overview: "Übersicht", expenses: "Ausgaben", savings: "Sparen", analysis: "Analyse" };
   function render() {
     state.active = activeWin().id;
     $("banner").hidden = !state.example;
@@ -293,7 +378,8 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       if (b.dataset.tab === ui.tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
     });
     $("pageTitle").textContent = TITLES[ui.tab];
-    ({ overview: renderOverview, expenses: renderExpenses, savings: renderSavings })[ui.tab]();
+    if (!TITLES[ui.tab]) ui.tab = "overview";
+    ({ overview: renderOverview, expenses: renderExpenses, savings: renderSavings, analysis: renderAnalysis })[ui.tab]();
   }
 
   function windowChips() {
@@ -316,6 +402,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     </section>`;
   }
 
+  const saveNote = m => m?.save?.mode === "paused" ? " · Sparen ausgesetzt" : m?.save?.mode === "reduced" ? " · Sparen reduziert" : "";
   function renderOverview() {
     const w = activeWin();
     const ms = windowMonths(w);
@@ -353,7 +440,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
         <div class="list">
           ${ms.map(k => { const x = monthCalc(w, k); return `<button class="item link" data-gomonth="${k}">
             <span class="icon">${MONTHS_SHORT[+k.slice(5) - 1]}</span>
-            <span class="grow"><span style="font-weight:700">${monthName(k)}</span><span class="sub">Gehalt ${fmt(x.salary)} · Ausgaben ${fmt(x.fixed + x.extras)}</span></span>
+            <span class="grow"><span style="font-weight:700">${monthName(k)}</span><span class="sub">Gehalt ${fmt(x.salary)} · Ausgaben ${fmt(x.fixed + x.extras)}${saveNote(w.months[k])}</span></span>
             <span class="val ${x.rest < 0 ? "down" : ""}">${fmt(x.rest)}<br><span class="sub">frei</span></span>
             <span class="chev">›</span></button>`; }).join("")}
         </div>
@@ -407,8 +494,23 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
         </div>
         <div class="sumrow"><span>Summe einmalig</span><span id="extraSum"></span></div>
       </section>
+      ${savingsMonthSection(m, key)}
       ${state.windows.length > 1 ? `<div class="row-actions" id="delWrap"><button class="btn danger" id="delWin">Planungsfenster ${monthShort(w.start)} – ${monthShort(addMonths(w.start, 3))} löschen</button></div>` : ""}`;
     liveExpenses();
+  }
+  function savingsMonthSection(m, key) {
+    const mode = m.save?.mode || "normal", mon = MONTHS_DE[+key.slice(5) - 1];
+    if (!state.etfs.length) return `<section class="section"><h2>Sparrate im ${mon}</h2><p class="hint">Lege zuerst unter „Sparen“ deine ETFs an.</p></section>`;
+    return `<section class="section">
+      <div class="section-head"><h2>Sparrate im ${mon}</h2><span class="muted" style="font-size:.82rem">normal ${fmt(etfMonthly())}</span></div>
+      <div class="seg" role="group" aria-label="Sparrate in diesem Monat">
+        ${[["normal", "Normal"], ["reduced", "Reduzieren"], ["paused", "Aussetzen"]].map(([v, l]) => `<button data-smode="${v}" data-key="${key}" aria-pressed="${mode === v}">${l}</button>`).join("")}
+      </div>
+      ${mode === "reduced" ? `<div class="card">${state.etfs.map(e => `<div class="field">
+          <label for="sr-${e.id}">${esc(e.name || "Ohne Namen")}<br><span style="font-size:.78rem">statt ${fmt(e.rate)}</span></label>
+          <input class="in amt" id="sr-${e.id}" data-srate="${e.id}" data-key="${key}" inputmode="decimal" placeholder="0,00" value="${esc(showNum(etfRateIn(m, e)))}"><span class="euro">€</span></div>`).join("")}</div>` : ""}
+      <p class="hint" id="saveHint"></p>
+    </section>`;
   }
   function expRow(item, scope) {
     return `<div class="erow" data-id="${item.id}" data-scope="${scope}">
@@ -424,6 +526,13 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     $("exBreak").textContent = `${fmt(c.salary)} Gehalt − ${fmt(c.fixed)} monatlich − ${fmt(c.extras)} einmalig − ${fmt(c.save)} Sparen`;
     $("fixedSum").textContent = fmt(c.fixed);
     $("extraSum").textContent = fmt(c.extras);
+    const h = $("saveHint");
+    if (h) {
+      const diff = etfMonthly() - c.save, mode = monthData(w, key).save?.mode;
+      h.textContent = mode === "paused" ? `In diesem Monat wird nichts in ETFs gespart. Dadurch hast du ${fmt(diff)} mehr frei verfügbar.`
+        : mode === "reduced" ? `Du sparst diesen Monat ${fmt(c.save)} statt ${fmt(etfMonthly())}. Das sind ${fmt(diff)} mehr frei verfügbar.`
+        : "Es wird die normale Sparrate aus „Sparen“ verwendet. Die Hochrechnung berücksichtigt Reduzierungen und Pausen.";
+    }
   }
 
   function renderSavings() {
@@ -463,6 +572,66 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     drawChart("sv");
   }
 
+  function renderAnalysis() {
+    const a = analyzeExtras();
+    const freq = [...a.list].sort((x, y) => y.count - x.count || y.total - x.total);
+    const avoid = [...a.list].filter(g => g.avoidable > 0).sort((x, y) => y.avoidable - x.avoidable);
+    const cats = new Map(); a.list.forEach(g => cats.set(g.cat.name, (cats.get(g.cat.name) || 0) + g.total));
+    const catList = [...cats].sort((x, y) => y[1] - x[1]);
+    const maxCat = Math.max(1, ...catList.map(c => c[1]));
+    const avoidTotal = avoid.reduce((s, g) => s + g.avoidable, 0);
+    const perMonth = avoidTotal / a.months;
+    const r = Math.pow(1.04, 1 / 12) - 1, fv = n => perMonth * (Math.pow(1 + r, n) - 1) / r;
+    if (!a.count) {
+      $("view").innerHTML = `<section class="hero"><span class="cap">Einmalige Ausgaben</span><span class="big">${fmt(0)}</span></section>
+        <p class="hint">Noch keine einmaligen Ausgaben geplant. Trage sie unter „Ausgaben“ ein, dann siehst du hier, was am häufigsten vorkommt und was sich am ehesten vermeiden lässt.</p>`;
+      return;
+    }
+    $("view").innerHTML = `
+      <section class="hero">
+        <span class="cap">Einmalige Ausgaben in ${a.months} geplanten Monaten</span>
+        <span class="big">${fmt(a.total)}</span>
+        <span class="muted" style="font-size:.9rem">${a.count} Posten · Ø ${fmt(a.total / a.months)} pro Monat</span>
+      </section>
+      <section class="stats">
+        <div class="stat"><span class="k">Davon vermeidbar</span><span class="v down">${fmt(avoidTotal)}</span></div>
+        <div class="stat"><span class="k">Ø pro Monat vermeidbar</span><span class="v">${fmt(perMonth)}</span></div>
+      </section>
+      ${perMonth > 0 ? `<div class="banner" style="display:grid;gap:4px"><span class="muted" style="font-size:.85rem">Wenn du das stattdessen monatlich in ETFs sparst (4 % p.a.)</span>
+        <span style="font-size:1.35rem;font-weight:800" class="up">+${fmt(fv(120))} in 10 Jahren</span>
+        <span class="muted" style="font-size:.85rem">${fmt(fv(12))} nach 1 Jahr · ${fmt(fv(36))} nach 3 Jahren</span></div>` : ""}
+      <section class="section">
+        <div class="section-head"><h2>Am häufigsten</h2><span class="muted" style="font-size:.82rem">nach Anzahl</span></div>
+        <div class="list">${freq.slice(0, 8).map(g => `<div class="item">
+          <span class="icon">${g.count}×</span>
+          <span class="grow"><span style="font-weight:700">${esc(g.name)}</span><span class="sub">${esc(g.cat.name)} · in ${g.months.size} von ${a.months} Monaten</span></span>
+          <span class="val">${fmt(g.total)}<br><span class="sub">Ø ${fmt(g.total / g.count)}</span></span></div>`).join("")}</div>
+      </section>
+      <section class="section">
+        <div class="section-head"><h2>Am vermeidbarsten</h2><span class="muted" style="font-size:.82rem">nach Sparpotenzial</span></div>
+        <div class="list">${(avoid.length ? avoid : []).slice(0, 8).map(g => avoidItem(g)).join("") || `<p class="hint">Nichts als vermeidbar eingestuft.</p>`}</div>
+        <p class="hint">Die Einstufung schlage ich anhand des Namens vor (z. B. Lieferdienst, Kleidung, Ausgehen = gut vermeidbar; Versicherung, Arzt = notwendig). Du kannst sie bei jedem Posten ändern. Gezählt wird bei „Gut vermeidbar“ 90 % und bei „Teilweise“ 50 % des Betrags.</p>
+      </section>
+      <section class="section">
+        <h2>Nach Kategorie</h2>
+        <div class="list">${catList.map(([n, v]) => `<div class="item" style="display:grid;gap:6px">
+          <div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:600">${esc(n)}</span><span style="font-weight:700">${fmt(v)}</span></div>
+          <div class="meter"><span style="width:${(v / maxCat * 100).toFixed(1)}%"></span></div></div>`).join("")}</div>
+      </section>
+      <section class="section">
+        <h2>Alle Posten einstufen</h2>
+        <div class="list">${[...a.list].sort((x, y) => y.total - x.total).filter(g => !g.avoidable).map(g => avoidItem(g)).join("") || `<p class="hint">Alle Posten sind oben schon aufgeführt.</p>`}</div>
+      </section>`;
+  }
+  function avoidItem(g) {
+    return `<div class="item" style="flex-wrap:wrap">
+      <span class="grow"><span style="font-weight:700">${esc(g.name)} <span class="lvl ${g.level}">${AVOID_LEVELS[g.level].label}</span></span>
+        <span class="sub">${g.count}× · ${fmt(g.total)} gesamt${g.avoidable ? ` · ${fmt(g.avoidable)} vermeidbar` : ""}${g.own ? " · von dir eingestuft" : ""}</span></span>
+      <span class="seg small" role="group" aria-label="Einstufung für ${esc(g.name)}">
+        ${Object.entries(AVOID_LEVELS).map(([k, l]) => `<button data-avoid="${esc(g.key)}" data-level="${k}" aria-pressed="${g.level === k}">${l.label}</button>`).join("")}
+      </span></div>`;
+  }
+
   function updateHero(p, n = ui.horizon, label) {
     const r = projectAll(n), gain = r.value - r.paid;
     if (!$(p + "Big")) return;
@@ -475,7 +644,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   function drawChart(p) {
     const box = $(p + "Chart"); if (!box) return;
     const N = ui.horizon, W = 600, H = 220, T = 12, B = 12;
-    const pts = []; for (let n = 0; n <= N; n++) pts.push(projectAll(n));
+    const pts = projectSeries(N);
     const max = Math.max(1, ...pts.map(q => q.value)), min = Math.min(...pts.map(q => q.paid), pts[0].value);
     const lo = Math.max(0, min - (max - min) * 0.1);
     const x = n => (n / N) * W;
@@ -527,6 +696,10 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       const row = t.closest(".erow"), item = findList(row.dataset.scope)?.find(i => i.id === row.dataset.id);
       if (!item) return;
       item[t.dataset.field] = t.dataset.field === "amount" ? parseNum(t.value) : t.value;
+    } else if (t.dataset.srate) {
+      const m = monthData(activeWin(), t.dataset.key);
+      m.save ||= { mode: "reduced", rates: {} }; m.save.rates ||= {};
+      m.save.rates[t.dataset.srate] = parseNum(t.value);
     } else if (t.dataset.efield) {
       const et = state.etfs.find(x => x.id === t.closest(".etf").dataset.etf); if (!et) return;
       et[t.dataset.efield] = t.dataset.efield === "name" ? t.value : parseNum(t.value);
@@ -538,6 +711,18 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   document.addEventListener("click", e => {
     const t = e.target.closest("button"); if (!t) return;
     if (t.dataset.tab) return go(t.dataset.tab);
+    if (t.dataset.smode) {
+      const m = monthData(activeWin(), t.dataset.key);
+      if (t.dataset.smode === "normal") delete m.save;
+      else m.save = { ...(m.save || {}), mode: t.dataset.smode, rates: m.save?.rates || {} };
+      render(); changed(); return;
+    }
+    if (t.dataset.avoid) {
+      state.avoid ||= {};
+      const g = analyzeExtras().list.find(x => x.key === t.dataset.avoid);
+      if (g && levelOf(g.cat.score) === t.dataset.level) delete state.avoid[t.dataset.avoid]; else state.avoid[t.dataset.avoid] = t.dataset.level;
+      render(); changed(); return;
+    }
     if (t.dataset.hz) { ui.horizon = +t.dataset.hz; saveUi(); render(); return; }
     if (t.dataset.win) { state.active = t.dataset.win; ui.month = null; render(); changed(); return; }
     if (t.dataset.month) { ui.month = t.dataset.month; saveUi(); render(); return; }
