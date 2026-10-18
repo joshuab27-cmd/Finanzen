@@ -133,9 +133,15 @@ nav.tabs {
 }
 nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
 .lvl { display: inline-block; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--chip); color: var(--muted); }
-.lvl.hoch { background: color-mix(in srgb, var(--down) 18%, transparent); color: var(--down); }
-.lvl.mittel { background: var(--chip); color: var(--ink); }
-.lvl.gering { background: color-mix(in srgb, var(--up) 16%, transparent); color: var(--up); }
+.lvl.unnoetig { background: color-mix(in srgb, var(--down) 18%, transparent); color: var(--down); }
+.lvl.vermeidbar { background: var(--chip); color: var(--ink); }
+.lvl.noetig { background: color-mix(in srgb, var(--up) 16%, transparent); color: var(--up); }
+.seg.small button[data-level="unnoetig"][aria-pressed="true"] { background: var(--down); color: #fff; }
+.seg.small button[data-level="noetig"][aria-pressed="true"] { background: var(--up); color: #000; }
+.erow.extra { flex-wrap: wrap; }
+.erow.extra .seg { flex-basis: 100%; }
+.erow.extra .in.name { flex: 1 1 0; width: auto; }
+[hidden] { display: none !important; }
 .meter { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
 .meter span { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
 .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; background: var(--surface); border-radius: 999px; padding: 4px; }
@@ -241,6 +247,11 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   let saveTarget = null, saveTimer = null, saving = false, dirty = false;
   const saveEl = $("save");
   const setSave = (s, text) => { saveEl.dataset.s = s; saveEl.textContent = text; };
+  const OLD_LEVELS = { hoch: "unnoetig", mittel: "vermeidbar", gering: "noetig" };
+  function migrate(st) {
+    if (st.avoid) Object.keys(st.avoid).forEach(k => { if (OLD_LEVELS[st.avoid[k]]) st.avoid[k] = OLD_LEVELS[st.avoid[k]]; });
+    return st;
+  }
   function localLoad() { try { const r = localStorage.getItem(STORE_KEY); return r ? JSON.parse(r) : null; } catch { return null; } }
   function localSave() { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); return true; } catch { return false; } }
   function changed() {
@@ -265,7 +276,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   }
   async function boot() {
     const local = localLoad();
-    if (local && local.windows?.length) state = local;
+    if (local && local.windows?.length) state = migrate(local);
     render();
     setSave("local", local ? "Nur in diesem Browser" : "Noch nicht gespeichert");
     const c = window.claude;
@@ -279,7 +290,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       const snap = await ref.get();
       saveTarget = ref;
       if (snap.exists && snap.data()?.plan?.windows?.length) {
-        state = snap.data().plan; render(); localSave(); setSave("ok", "Gespeichert");
+        state = migrate(JSON.parse(JSON.stringify(snap.data().plan))); render(); localSave(); setSave("ok", "Gespeichert");
       } else if (local && local.windows?.length && !local.example) {
         dirty = true; await flush();
       } else setSave("ok", "Speichert automatisch");
@@ -347,8 +358,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     { name: "Haushalt & Reparatur", score: 25, words: ["reparatur", "waschmaschine", "kühlschrank", "möbel", "haushalt", "handwerker", "werkzeug", "renovier"] },
     { name: "Auto & Mobilität", score: 20, words: ["tanken", "benzin", "diesel", "werkstatt", "tüv", "reifen", "bahn", "deutschlandticket", "kfz", "auto", "parken"] },
   ];
-  const AVOID_LEVELS = { hoch: { label: "Gut vermeidbar", f: 0.9 }, mittel: { label: "Teilweise", f: 0.5 }, gering: { label: "Notwendig", f: 0 } };
-  const levelOf = score => score >= 65 ? "hoch" : score >= 30 ? "mittel" : "gering";
+  const AVOID_LEVELS = { unnoetig: { label: "Unnötig", f: 1 }, vermeidbar: { label: "Vermeidbar", f: 0.5 }, noetig: { label: "Nötig", f: 0 } };
   const normName = s => String(s || "").toLowerCase().replace(/\(.*?\)/g, "").replace(/\s+/g, " ").trim();
   const categorize = name => { const n = normName(name); return CATEGORIES.find(c => c.words.some(w => n.includes(w))) || { name: "Sonstiges", score: 50 }; };
   function analyzeExtras() {
@@ -363,8 +373,8 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       });
     }));
     const list = [...groups.values()].map(g => {
-      const level = state.avoid?.[g.key] || levelOf(g.cat.score);
-      return { ...g, level, own: !!state.avoid?.[g.key], avoidable: g.total * AVOID_LEVELS[level].f };
+      const level = AVOID_LEVELS[state.avoid?.[g.key]] ? state.avoid[g.key] : null;
+      return { ...g, level, avoidable: level ? g.total * AVOID_LEVELS[level].f : 0 };
     });
     return { list, total, count, months: months.size || 1 };
   }
@@ -513,11 +523,13 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     </section>`;
   }
   function expRow(item, scope) {
-    return `<div class="erow" data-id="${item.id}" data-scope="${scope}">
+    const extra = scope.startsWith("extra:"), key = normName(item.name);
+    return `<div class="erow${extra ? " extra" : ""}" data-id="${item.id}" data-scope="${scope}">
       <input class="in name" id="n-${item.id}" aria-label="Bezeichnung" placeholder="Bezeichnung, z. B. Miete" value="${esc(item.name)}" data-field="name">
       <input class="in amt" id="a-${item.id}" aria-label="Betrag in Euro" inputmode="decimal" placeholder="0,00" value="${esc(showNum(item.amount))}" data-field="amount">
       <span class="euro">€</span>
-      <button class="x" data-del="${item.id}" data-scope="${scope}" aria-label="Entfernen">×</button></div>`;
+      <button class="x" data-del="${item.id}" data-scope="${scope}" aria-label="Entfernen">×</button>
+      ${extra ? levelSeg(key, AVOID_LEVELS[state.avoid?.[key]] ? state.avoid[key] : null, item.name || "Ausgabe") : ""}</div>`;
   }
   function liveExpenses() {
     const w = activeWin(), key = selMonth(), c = monthCalc(w, key);
@@ -574,62 +586,78 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
 
   function renderAnalysis() {
     const a = analyzeExtras();
+    if (!a.count) {
+      $("view").innerHTML = `<section class="hero"><span class="cap">Einmalige Ausgaben</span><span class="big">${fmt(0)}</span></section>
+        <p class="hint">Noch keine einmaligen Ausgaben geplant. Trage sie unter „Ausgaben“ ein, dann siehst du hier, was am häufigsten vorkommt und was sich vermeiden lässt.</p>`;
+      return;
+    }
+    const by = lvl => a.list.filter(g => g.level === lvl);
+    const total = lvl => by(lvl).reduce((x, g) => x + g.total, 0);
+    const open = a.list.filter(g => !g.level).sort((x, y) => y.total - x.total);
     const freq = [...a.list].sort((x, y) => y.count - x.count || y.total - x.total);
-    const avoid = [...a.list].filter(g => g.avoidable > 0).sort((x, y) => y.avoidable - x.avoidable);
+    const avoid = a.list.filter(g => g.avoidable > 0).sort((x, y) => y.avoidable - x.avoidable);
+    const avoidTotal = avoid.reduce((x, g) => x + g.avoidable, 0);
+    const perMonth = avoidTotal / a.months;
+    const r = Math.pow(1.04, 1 / 12) - 1, fv = n => perMonth * (Math.pow(1 + r, n) - 1) / r;
     const cats = new Map(); a.list.forEach(g => cats.set(g.cat.name, (cats.get(g.cat.name) || 0) + g.total));
     const catList = [...cats].sort((x, y) => y[1] - x[1]);
     const maxCat = Math.max(1, ...catList.map(c => c[1]));
-    const avoidTotal = avoid.reduce((s, g) => s + g.avoidable, 0);
-    const perMonth = avoidTotal / a.months;
-    const r = Math.pow(1.04, 1 / 12) - 1, fv = n => perMonth * (Math.pow(1 + r, n) - 1) / r;
-    if (!a.count) {
-      $("view").innerHTML = `<section class="hero"><span class="cap">Einmalige Ausgaben</span><span class="big">${fmt(0)}</span></section>
-        <p class="hint">Noch keine einmaligen Ausgaben geplant. Trage sie unter „Ausgaben“ ein, dann siehst du hier, was am häufigsten vorkommt und was sich am ehesten vermeiden lässt.</p>`;
-      return;
-    }
+    const share = v => a.total ? (v / a.total * 100).toFixed(1) : 0;
+
     $("view").innerHTML = `
       <section class="hero">
         <span class="cap">Einmalige Ausgaben in ${a.months} geplanten Monaten</span>
         <span class="big">${fmt(a.total)}</span>
         <span class="muted" style="font-size:.9rem">${a.count} Posten · Ø ${fmt(a.total / a.months)} pro Monat</span>
       </section>
-      <section class="stats">
-        <div class="stat"><span class="k">Davon vermeidbar</span><span class="v down">${fmt(avoidTotal)}</span></div>
-        <div class="stat"><span class="k">Ø pro Monat vermeidbar</span><span class="v">${fmt(perMonth)}</span></div>
+      <section class="section">
+        <div class="bar" aria-hidden="true">
+          <span style="width:${share(total("unnoetig"))}%;background:var(--down)"></span>
+          <span style="width:${share(total("vermeidbar"))}%;background:var(--ink)"></span>
+          <span style="width:${share(total("noetig"))}%;background:var(--up)"></span>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="k">Unnötig</span><span class="v down">${fmt(total("unnoetig"))}</span></div>
+          <div class="stat"><span class="k">Vermeidbar</span><span class="v">${fmt(total("vermeidbar"))}</span></div>
+          <div class="stat"><span class="k">Nötig</span><span class="v up">${fmt(total("noetig"))}</span></div>
+          <div class="stat"><span class="k">Nicht eingestuft</span><span class="v muted">${fmt(open.reduce((x, g) => x + g.total, 0))}</span></div>
+        </div>
       </section>
-      ${perMonth > 0 ? `<div class="banner" style="display:grid;gap:4px"><span class="muted" style="font-size:.85rem">Wenn du das stattdessen monatlich in ETFs sparst (4 % p.a.)</span>
+      ${open.length ? `<section class="section">
+        <div class="section-head"><h2>Noch einstufen</h2><span class="muted" style="font-size:.82rem">${open.length} Posten</span></div>
+        <p class="hint">Entscheide selbst: Unnötig (hättest du dir ganz sparen können), Vermeidbar (ging auch günstiger oder seltener) oder Nötig. Gleich benannte Ausgaben werden zusammen eingestuft.</p>
+        <div class="list">${open.map(avoidItem).join("")}</div>
+      </section>` : ""}
+      ${perMonth > 0 ? `<div class="banner" style="display:grid;gap:4px"><span class="muted" style="font-size:.85rem">Sparpotenzial: Ø ${fmt(perMonth)} pro Monat. Monatlich in ETFs gespart (4 % p.a.):</span>
         <span style="font-size:1.35rem;font-weight:800" class="up">+${fmt(fv(120))} in 10 Jahren</span>
-        <span class="muted" style="font-size:.85rem">${fmt(fv(12))} nach 1 Jahr · ${fmt(fv(36))} nach 3 Jahren</span></div>` : ""}
+        <span class="muted" style="font-size:.85rem">${fmt(fv(12))} nach 1 Jahr · ${fmt(fv(36))} nach 3 Jahren · Unnötig zählt voll, Vermeidbar zur Hälfte</span></div>` : ""}
+      <section class="section">
+        <div class="section-head"><h2>Am vermeidbarsten</h2><span class="muted" style="font-size:.82rem">nach deiner Einstufung</span></div>
+        <div class="list">${avoid.slice(0, 10).map(avoidItem).join("") || `<p class="hint">Sobald du Posten als „Unnötig“ oder „Vermeidbar“ einstufst, erscheinen sie hier, sortiert nach Sparpotenzial.</p>`}</div>
+      </section>
       <section class="section">
         <div class="section-head"><h2>Am häufigsten</h2><span class="muted" style="font-size:.82rem">nach Anzahl</span></div>
         <div class="list">${freq.slice(0, 8).map(g => `<div class="item">
           <span class="icon">${g.count}×</span>
-          <span class="grow"><span style="font-weight:700">${esc(g.name)}</span><span class="sub">${esc(g.cat.name)} · in ${g.months.size} von ${a.months} Monaten</span></span>
+          <span class="grow"><span style="font-weight:700">${esc(g.name)} ${g.level ? `<span class="lvl ${g.level}">${AVOID_LEVELS[g.level].label}</span>` : ""}</span><span class="sub">in ${g.months.size} von ${a.months} Monaten</span></span>
           <span class="val">${fmt(g.total)}<br><span class="sub">Ø ${fmt(g.total / g.count)}</span></span></div>`).join("")}</div>
       </section>
-      <section class="section">
-        <div class="section-head"><h2>Am vermeidbarsten</h2><span class="muted" style="font-size:.82rem">nach Sparpotenzial</span></div>
-        <div class="list">${(avoid.length ? avoid : []).slice(0, 8).map(g => avoidItem(g)).join("") || `<p class="hint">Nichts als vermeidbar eingestuft.</p>`}</div>
-        <p class="hint">Die Einstufung schlage ich anhand des Namens vor (z. B. Lieferdienst, Kleidung, Ausgehen = gut vermeidbar; Versicherung, Arzt = notwendig). Du kannst sie bei jedem Posten ändern. Gezählt wird bei „Gut vermeidbar“ 90 % und bei „Teilweise“ 50 % des Betrags.</p>
-      </section>
+      ${by("noetig").length ? `<section class="section"><h2>Nötig</h2><div class="list">${by("noetig").sort((x, y) => y.total - x.total).map(avoidItem).join("")}</div></section>` : ""}
       <section class="section">
         <h2>Nach Kategorie</h2>
         <div class="list">${catList.map(([n, v]) => `<div class="item" style="display:grid;gap:6px">
           <div style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:600">${esc(n)}</span><span style="font-weight:700">${fmt(v)}</span></div>
           <div class="meter"><span style="width:${(v / maxCat * 100).toFixed(1)}%"></span></div></div>`).join("")}</div>
-      </section>
-      <section class="section">
-        <h2>Alle Posten einstufen</h2>
-        <div class="list">${[...a.list].sort((x, y) => y.total - x.total).filter(g => !g.avoidable).map(g => avoidItem(g)).join("") || `<p class="hint">Alle Posten sind oben schon aufgeführt.</p>`}</div>
+        <p class="hint">Die Kategorien werden grob am Namen erkannt und dienen nur der Übersicht.</p>
       </section>`;
   }
+  const levelSeg = (key, level, name) => `<span class="seg small" role="group" aria-label="Einstufung für ${esc(name)}">
+    ${Object.entries(AVOID_LEVELS).map(([k, l]) => `<button data-avoid="${esc(key)}" data-level="${k}" aria-pressed="${level === k}">${l.label}</button>`).join("")}</span>`;
   function avoidItem(g) {
     return `<div class="item" style="flex-wrap:wrap">
-      <span class="grow"><span style="font-weight:700">${esc(g.name)} <span class="lvl ${g.level}">${AVOID_LEVELS[g.level].label}</span></span>
-        <span class="sub">${g.count}× · ${fmt(g.total)} gesamt${g.avoidable ? ` · ${fmt(g.avoidable)} vermeidbar` : ""}${g.own ? " · von dir eingestuft" : ""}</span></span>
-      <span class="seg small" role="group" aria-label="Einstufung für ${esc(g.name)}">
-        ${Object.entries(AVOID_LEVELS).map(([k, l]) => `<button data-avoid="${esc(g.key)}" data-level="${k}" aria-pressed="${g.level === k}">${l.label}</button>`).join("")}
-      </span></div>`;
+      <span class="grow"><span style="font-weight:700">${esc(g.name)}</span>
+        <span class="sub">${g.count}× · ${fmt(g.total)} gesamt${g.avoidable ? ` · ${fmt(g.avoidable)} Sparpotenzial` : ""}</span></span>
+      ${levelSeg(g.key, g.level, g.name)}</div>`;
   }
 
   function updateHero(p, n = ui.horizon, label) {
@@ -696,6 +724,9 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       const row = t.closest(".erow"), item = findList(row.dataset.scope)?.find(i => i.id === row.dataset.id);
       if (!item) return;
       item[t.dataset.field] = t.dataset.field === "amount" ? parseNum(t.value) : t.value;
+      if (t.dataset.field === "name") row.querySelectorAll("[data-avoid]").forEach(b => {
+        const k = normName(t.value); b.dataset.avoid = k; b.setAttribute("aria-pressed", String(!!k && state.avoid?.[k] === b.dataset.level));
+      });
     } else if (t.dataset.srate) {
       const m = monthData(activeWin(), t.dataset.key);
       m.save ||= { mode: "reduced", rates: {} }; m.save.rates ||= {};
@@ -718,9 +749,9 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       render(); changed(); return;
     }
     if (t.dataset.avoid) {
+      if (!t.dataset.avoid) { t.closest(".erow")?.querySelector(".in.name")?.focus(); return; }
       state.avoid ||= {};
-      const g = analyzeExtras().list.find(x => x.key === t.dataset.avoid);
-      if (g && levelOf(g.cat.score) === t.dataset.level) delete state.avoid[t.dataset.avoid]; else state.avoid[t.dataset.avoid] = t.dataset.level;
+      if (state.avoid[t.dataset.avoid] === t.dataset.level) delete state.avoid[t.dataset.avoid]; else state.avoid[t.dataset.avoid] = t.dataset.level;
       render(); changed(); return;
     }
     if (t.dataset.hz) { ui.horizon = +t.dataset.hz; saveUi(); render(); return; }
