@@ -26,7 +26,7 @@ self.addEventListener("fetch", e => {
     return;
   }
   // Eigene Dateien und Schriften: Cache zuerst, im Hintergrund auffrischen
-  if (url.origin === location.origin || url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com")) {
+  if (url.origin === location.origin || url.hostname.endsWith("fonts.googleapis.com") || url.hostname.endsWith("fonts.gstatic.com") || url.hostname === "upload.wikimedia.org") {
     e.respondWith(caches.match(req).then(hit => {
       const net = fetch(req).then(res => {
         if (res.ok || res.type === "opaque") { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
