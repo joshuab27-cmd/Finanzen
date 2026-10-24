@@ -156,7 +156,57 @@ nav.tabs {
 textarea.in { font: inherit; font-size: 0.8rem; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; width: 100%; min-height: 110px; resize: vertical; font-family: ui-monospace, Menlo, monospace; }
 .ok-msg { color: var(--up); font-weight: 600; font-size: 0.9rem; margin: 0; }
 .err-msg { color: var(--down); font-weight: 600; font-size: 0.9rem; margin: 0; }
-nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); }
+.goal { background: var(--surface); border-radius: 20px; padding: 14px; display: grid; gap: 12px; }
+.goal-art { aspect-ratio: 16 / 10; max-width: 100%; border-radius: 14px; overflow: hidden; display: grid; place-items: center;
+  background: radial-gradient(120% 90% at 50% 20%, var(--surface-2), var(--bg)); }
+.goal-art svg { width: 78%; height: auto; overflow: visible; }
+.goal-art .a-photo { width: 100%; height: 100%; object-fit: cover; }
+.goal-head { display: flex; gap: 10px; align-items: center; }
+.goal-head .grow { display: grid; gap: 2px; min-width: 0; }
+.g-title { font-size: 1.2rem; font-weight: 800; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.goal-head .sub { font-size: 0.82rem; color: var(--muted); }
+.g-bar { position: relative; height: 26px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.g-fill { position: absolute; inset: 0 auto 0 0; width: var(--w); background: linear-gradient(90deg, color-mix(in srgb, var(--up) 70%, transparent), var(--up)); border-radius: 999px; }
+.g-fill.done { background: var(--up); }
+.g-pct { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 0.82rem; color: var(--ink); text-shadow: 0 0 6px var(--bg); }
+.g-nums { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 0.92rem; }
+.g-when { margin: 0; font-size: 0.95rem; }
+.goal-edit { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+.goal-edit .card { background: var(--surface-2); }
+.label-s { font-size: 0.82rem; color: var(--muted); font-weight: 600; }
+select.in.sel { flex: 0 0 auto; width: auto; text-align: right; font-weight: 700; appearance: none; }
+.btn[disabled] { opacity: .45; cursor: default; }
+.a-sec { transform-origin: 100px 62px; transform-box: view-box; animation: a-spin 60s linear infinite; }
+.a-float { animation: a-float 5s ease-in-out infinite; }
+.a-shine { animation: a-shine 4.5s ease-in-out infinite; }
+.a-wheel { transform-box: view-box; animation: a-spin .7s linear infinite; }
+.a-road { animation: a-road .5s linear infinite; }
+.a-bob { animation: a-bob .9s ease-in-out infinite; }
+.a-glow { animation: a-glow 3s ease-in-out infinite; }
+.a-smoke { transform-box: view-box; animation: a-smoke 3.3s ease-out infinite; opacity: 0; }
+.a-sway { transform-box: view-box; animation: a-sway 4s ease-in-out infinite; }
+.a-cloud { animation: a-cloud 12s linear infinite; }
+.a-fly { animation: a-fly 3.2s ease-in-out infinite; transform-box: view-box; transform-origin: 115px 66px; }
+.a-bar { transform-box: view-box; animation: a-barg 2.4s ease-in-out infinite; }
+.a-coin { animation: a-coin 2.2s ease-in infinite; }
+.a-photo { animation: a-ken 14s ease-in-out infinite alternate; }
+.g-fill { animation: g-grow 1.1s cubic-bezier(.2,.8,.2,1); }
+@keyframes a-spin { to { transform: rotate(360deg); } }
+@keyframes a-float { 50% { transform: translateY(-3px); } }
+@keyframes a-shine { 0%, 60% { transform: translateX(-30px) rotate(35deg); opacity: 0; } 75% { opacity: .18; } 100% { transform: translateX(70px) rotate(35deg); opacity: 0; } }
+@keyframes a-road { to { transform: translateX(-28px); } }
+@keyframes a-bob { 50% { transform: translateY(-1.5px); } }
+@keyframes a-glow { 50% { opacity: .55; } }
+@keyframes a-smoke { 0% { transform: translate(0, 0) scale(.6); opacity: 0; } 20% { opacity: .45; } 100% { transform: translate(14px, -26px) scale(1.8); opacity: 0; } }
+@keyframes a-sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes a-cloud { from { transform: translateX(60px); } to { transform: translateX(-80px); } }
+@keyframes a-fly { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(1deg); } }
+@keyframes a-barg { 0%, 100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }
+@keyframes a-coin { 0% { transform: translateY(-10px); opacity: 0; } 15% { opacity: 1; } 70% { transform: translateY(26px); opacity: 1; } 85%, 100% { transform: translateY(30px); opacity: 0; } }
+@keyframes a-ken { from { transform: scale(1); } to { transform: scale(1.08) translate(-1%, -1%); } }
+@keyframes g-grow { from { width: 0; } }
+@media (prefers-reduced-motion: reduce) { .goal-art *, .g-fill { animation: none !important; } }
 .lvl { display: inline-block; font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: var(--chip); color: var(--muted); }
 .lvl.unnoetig { background: color-mix(in srgb, var(--down) 18%, transparent); color: var(--down); }
 .lvl.vermeidbar { background: var(--chip); color: var(--ink); }
@@ -206,6 +256,8 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M7 15h4"/></svg>Ausgaben</button>
     <button data-tab="savings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>Sparen</button>
+    <button data-tab="goals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Ziele</button>
     <button data-tab="analysis">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/><path d="M8 11h6"/></svg>Analyse</button>
   </div>
@@ -255,6 +307,9 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     return { example: true, active: w.id, windows: [w], etfs: [
       { id: uid(), name: "MSCI World", rate: 200, start: 1500, ret: 4 },
       { id: uid(), name: "MSCI Emerging Markets", rate: 50, start: 300, ret: 4 },
+    ], goals: [
+      { id: uid(), name: "Omega Seamaster 300M", cat: "uhr", target: 5900, saved: 1350, rate: 150, freq: "monthly", pause: null },
+      { id: uid(), name: "Japan-Reise", cat: "reise", target: 4000, saved: 600, rate: 25, freq: "weekly", pause: null },
     ] };
   }
   function emptyState() {
@@ -262,7 +317,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     const months = {};
     [0, 1, 2, 3].forEach(i => { months[addMonths(start, i)] = { salary: 0, extras: [] }; });
     const w = { id: uid(), start, fixed: [], months };
-    return { example: false, active: w.id, windows: [w], etfs: [] };
+    return { example: false, active: w.id, windows: [w], etfs: [], goals: [] };
   }
 
   let state = exampleState();
@@ -279,6 +334,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   const setSave = (s, text) => { saveEl.dataset.s = s; saveEl.textContent = text; };
   const OLD_LEVELS = { hoch: "unnoetig", mittel: "vermeidbar", gering: "noetig" };
   function migrate(st) {
+    st.goals = Array.isArray(st.goals) ? st.goals : [];
     if (st.avoid) Object.keys(st.avoid).forEach(k => { if (OLD_LEVELS[st.avoid[k]]) st.avoid[k] = OLD_LEVELS[st.avoid[k]]; });
     return st;
   }
@@ -346,9 +402,263 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   const etfInvested = () => state.etfs.reduce((a, e) => a + (+e.start || 0), 0);
   function monthCalc(w, key) {
     const m = monthData(w, key);
-    const salary = +m.salary || 0, fixed = sum(w.fixed), extras = sum(m.extras), save = monthSave(m);
-    return { salary, fixed, extras, save, rest: salary - fixed - extras - save };
+    const salary = +m.salary || 0, fixed = sum(w.fixed), extras = sum(m.extras), save = monthSave(m), goals = monthGoals(key);
+    return { salary, fixed, extras, save, goals, rest: salary - fixed - extras - save - goals };
   }
+  // ---------- Sparziele ----------
+  const FREQ = {
+    weekly: { label: "wöchentlich", perMonth: 52 / 12 },
+    monthly: { label: "monatlich", perMonth: 1 },
+    bimonthly: { label: "alle 2 Monate", perMonth: 1 / 2 },
+    quarterly: { label: "vierteljährlich", perMonth: 1 / 3 },
+    yearly: { label: "jährlich", perMonth: 1 / 12 },
+  };
+  const GOAL_CATS = {
+    uhr: { label: "Uhr", words: ["uhr", "watch", "omega", "rolex", "seamaster", "speedmaster", "tudor", "seiko", "breitling", "heuer", "cartier", "chrono", "longines", "sinn"] },
+    auto: { label: "Auto", words: ["auto", "wagen", "bmw", "audi", "vw", "golf", "mercedes", "porsche", "tesla", "skoda", "opel", "ford", "toyota", "fahrzeug", "motorrad"] },
+    haus: { label: "Haus", words: ["haus", "wohnung", "eigenkapital", "immobilie", "eigenheim", "grundstück"] },
+    kleidung: { label: "Anzug & Kleidung", words: ["anzug", "kleidung", "sakko", "mantel", "schuhe", "kleid", "jacke", "hemd", "smoking"] },
+    reise: { label: "Reise", words: ["reise", "urlaub", "flug", "trip", "rundreise", "japan", "usa", "thailand", "kreuzfahrt", "weltreise"] },
+    technik: { label: "Technik", words: ["iphone", "laptop", "macbook", "pc", "kamera", "fernseher", "tv", "playstation", "konsole", "handy", "ipad", "tablet", "computer"] },
+    sonstiges: { label: "Sonstiges", words: [] },
+  };
+  const guessCat = name => { const n = String(name || "").toLowerCase(); return Object.keys(GOAL_CATS).find(k => GOAL_CATS[k].words.some(w => n.includes(w))) || "sonstiges"; };
+  const goalPausedIn = (g, key) => !!g.pause && key >= g.pause.from && (!g.pause.until || key < g.pause.until);
+  const goalDone = g => (+g.target || 0) > 0 && (+g.saved || 0) >= (+g.target || 0);
+  const goalMonthly = (g, key) => goalDone(g) || goalPausedIn(g, key) ? 0 : (+g.rate || 0) * (FREQ[g.freq] || FREQ.monthly).perMonth;
+  const monthGoals = key => (state.goals || []).reduce((a, g) => a + goalMonthly(g, key), 0);
+  // Monat für Monat hochzählen, damit Sparpausen das Zieldatum verschieben
+  function goalEta(g) {
+    const target = +g.target || 0, rem = target - (+g.saved || 0);
+    if (target <= 0) return { state: "notarget" };
+    if (rem <= 0) return { state: "done" };
+    if (!(+g.rate > 0)) return { state: "norate" };
+    const now = ym(new Date());
+    let acc = +g.saved || 0;
+    for (let n = 0; n < 1200; n++) {
+      const key = addMonths(now, n);
+      if (g.pause && !g.pause.until && key >= g.pause.from) return { state: "paused" };
+      acc += goalMonthly(g, key);
+      if (acc >= target) return { state: "eta", months: n + 1, key };
+    }
+    return { state: "far" };
+  }
+  function duration(months) {
+    const y = Math.floor(months / 12), m = months % 12;
+    const parts = [];
+    if (y) parts.push(y === 1 ? "1 Jahr" : `${y} Jahre`);
+    if (m) parts.push(m === 1 ? "1 Monat" : `${m} Monate`);
+    return parts.join(" und ") || "weniger als 1 Monat";
+  }
+
+  // Animierte Illustrationen je Art des Ziels (eigene Zeichnungen, keine Markenlogos)
+  function goalArt(cat) {
+    const d = new Date(), sec = d.getSeconds() + d.getMilliseconds() / 1000;
+    const minA = (d.getMinutes() + sec / 60) * 6, hourA = ((d.getHours() % 12) + d.getMinutes() / 60) * 30;
+    const ticks = (r1, r2, n, w, col) => Array.from({ length: n }, (_, i) => {
+      const a = i * 360 / n;
+      return `<rect x="${100 - w / 2}" y="${62 - r2}" width="${w}" height="${r2 - r1}" rx="${w / 2}" fill="${col}" transform="rotate(${a} 100 62)"/>`;
+    }).join("");
+    const svg = inner => `<svg viewBox="0 0 200 125" aria-hidden="true">${inner}</svg>`;
+    switch (cat) {
+      case "uhr": return svg(`
+        <defs><clipPath id="dial"><circle cx="100" cy="62" r="33"/></clipPath>
+          <linearGradient id="case" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef1f5"/><stop offset=".5" stop-color="#9aa3ae"/><stop offset="1" stop-color="#dfe3e8"/></linearGradient>
+          <radialGradient id="dialg" cx=".4" cy=".35"><stop offset="0" stop-color="#2d63b5"/><stop offset="1" stop-color="#123a78"/></radialGradient></defs>
+        <g class="a-float">
+          <rect x="79" y="-4" width="42" height="40" rx="5" fill="url(#case)"/><rect x="79" y="89" width="42" height="40" rx="5" fill="url(#case)"/>
+          <path d="M93 -4v40M107 -4v40M93 89v40M107 89v40" stroke="#7d8692" stroke-width="1.2"/>
+          <rect x="146" y="56" width="8" height="12" rx="2" fill="#b9c0c9"/>
+          <circle cx="100" cy="62" r="47" fill="url(#case)"/>
+          <circle cx="100" cy="62" r="42" fill="#0f2147"/>
+          ${ticks(36.5, 40.5, 60, 0.9, "#c7d3ea")}${ticks(35.5, 40.5, 12, 2.2, "#ffffff")}
+          <path d="M100 19l-4 6h8z" fill="#ffffff"/>
+          <circle cx="100" cy="62" r="33" fill="url(#dialg)"/>
+          <g clip-path="url(#dial)" stroke="#4d7fcc" stroke-width="1.6" fill="none" opacity=".55">
+            ${[38, 45, 52, 59, 66, 73, 80, 87].map(y => `<path d="M64 ${y} q9 -4 18 0 t18 0 t18 0 t18 0"/>`).join("")}
+          </g>
+          ${ticks(24, 30, 12, 3.2, "#f2f5fa")}
+          <rect x="97.5" y="29" width="5" height="7" rx="1" fill="#f2f5fa"/>
+          <g transform="rotate(${hourA} 100 62)"><path d="M97.6 64 L98.5 44 L100 40 L101.5 44 L102.4 64 Z" fill="#f2f5fa"/></g>
+          <g transform="rotate(${minA} 100 62)"><path d="M98.3 64 L99 36 L100 33 L101 36 L101.7 64 Z" fill="#f2f5fa"/></g>
+          <g class="a-sec" style="animation-delay:-${sec.toFixed(2)}s"><rect x="99.4" y="34" width="1.2" height="38" fill="#e8463c"/><circle cx="100" cy="42" r="2.2" fill="#e8463c"/></g>
+          <circle cx="100" cy="62" r="2.4" fill="#e8463c"/>
+          <ellipse class="a-shine" cx="80" cy="45" rx="7" ry="30" fill="#ffffff" opacity=".12" transform="rotate(35 80 45)"/>
+        </g>`);
+      case "auto": return svg(`
+        <g class="a-road"><path d="M0 112h200" stroke="var(--muted)" stroke-width="2" stroke-dasharray="16 12" opacity=".6"/></g>
+        <g class="a-bob">
+          <path d="M28 92 C30 78 44 74 58 72 L78 56 C84 52 92 50 104 50 L130 50 C140 50 148 56 154 64 L166 72 C176 74 182 80 182 92 Z" fill="#d63c3c"/>
+          <path d="M84 58 C88 55 94 54 103 54 L112 54 L112 70 L72 70 Z" fill="#a9cdee"/>
+          <path d="M117 54 L130 54 C137 54 143 59 147 66 L148 70 L117 70 Z" fill="#a9cdee"/>
+          <rect x="28" y="88" width="154" height="6" rx="3" fill="#a92c2c"/>
+          <circle cx="178" cy="80" r="3" fill="#ffe28a" class="a-glow"/>
+          ${[62, 150].map(x => `<g class="a-wheel" style="transform-origin:${x}px 94px"><circle cx="${x}" cy="94" r="14" fill="#1d1d20"/><circle cx="${x}" cy="94" r="7.5" fill="#c4c9d0"/><path d="M${x} 87v14M${x - 7} 94h14" stroke="#7b818a" stroke-width="2"/></g>`).join("")}
+        </g>`);
+      case "haus": return svg(`
+        ${[0, 1, 2].map(i => `<circle class="a-smoke" style="animation-delay:${i * 1.1}s" cx="134" cy="22" r="6" fill="var(--muted)"/>`).join("")}
+        <rect x="128" y="24" width="12" height="22" fill="#8a4b3b"/>
+        <rect x="52" y="58" width="96" height="58" fill="#e9dfcf"/>
+        <path d="M40 62 L100 18 L160 62 Z" fill="#b5523f"/>
+        <rect x="90" y="84" width="20" height="32" rx="2" fill="#6b4630"/>
+        <circle cx="105" cy="101" r="1.6" fill="#f2d27a"/>
+        <rect class="a-glow" x="62" y="72" width="20" height="18" rx="2" fill="#ffd86b"/>
+        <rect class="a-glow" style="animation-delay:1.3s" x="118" y="72" width="20" height="18" rx="2" fill="#ffd86b"/>
+        <path d="M72 72v18M62 81h20M128 72v18M118 81h20" stroke="#e9dfcf" stroke-width="2"/>
+        <g class="a-sway" style="transform-origin:28px 116px"><rect x="26" y="92" width="4" height="24" fill="#6b4630"/><circle cx="28" cy="86" r="14" fill="#3f9d5b"/></g>
+        <path d="M10 116h180" stroke="var(--muted)" stroke-width="2" opacity=".6"/>`);
+      case "kleidung": return svg(`
+        <g class="a-sway" style="transform-origin:100px 6px">
+          <path d="M100 6 c0 -8 10 -8 10 0 c0 6 -10 6 -10 12" stroke="#b9c0c9" stroke-width="3" fill="none"/>
+          <path d="M100 18 L54 36 L146 36 Z" stroke="#b9c0c9" stroke-width="3" fill="none" stroke-linejoin="round"/>
+          <path d="M60 34 L84 26 L100 44 L116 26 L140 34 L148 118 L52 118 Z" fill="#1f2a44"/>
+          <path d="M84 26 L100 44 L116 26 L108 26 L100 36 L92 26 Z" fill="#f4f4f6"/>
+          <path d="M97 40 L103 40 L105 84 L100 92 L95 84 Z" fill="#b8323a"/>
+          <path d="M84 26 L76 62 L100 44 Z M116 26 L124 62 L100 44 Z" fill="#283657"/>
+          <path d="M100 44 L100 118" stroke="#151d31" stroke-width="1.5"/>
+          ${[78, 94].map(y => `<circle cx="104" cy="${y + 10}" r="1.8" fill="#0d1324"/>`).join("")}
+          <path d="M118 52 l10 0" stroke="#f4f4f6" stroke-width="3" stroke-linecap="round"/>
+        </g>`);
+      case "reise": return svg(`
+        <circle cx="160" cy="28" r="14" fill="#ffc94d" class="a-glow"/>
+        <g class="a-cloud"><ellipse cx="40" cy="90" rx="22" ry="9" fill="var(--muted)" opacity=".35"/><ellipse cx="54" cy="84" rx="14" ry="9" fill="var(--muted)" opacity=".35"/></g>
+        <g class="a-cloud" style="animation-delay:-6s"><ellipse cx="130" cy="104" rx="26" ry="9" fill="var(--muted)" opacity=".3"/></g>
+        <g class="a-fly">
+          <path d="M14 70 h48" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6 6" opacity=".7"/>
+          <path d="M60 66 C60 60 70 58 82 58 L150 58 C162 58 170 62 170 66 C170 70 162 74 150 74 L82 74 C70 74 60 72 60 66 Z" fill="#eef1f5"/>
+          <path d="M104 62 L84 30 L96 30 L128 62 Z" fill="#c9d2de"/><path d="M104 70 L88 100 L100 100 L128 70 Z" fill="#c9d2de"/>
+          <path d="M66 62 L58 44 L68 44 L80 60 Z" fill="#3b82c4"/>
+          ${[96, 108, 120, 132, 144].map(x => `<circle cx="${x}" cy="64" r="2" fill="#3b82c4"/>`).join("")}
+          <path d="M160 61 c5 1 7 3 8 5" stroke="#3b82c4" stroke-width="3" fill="none"/>
+        </g>`);
+      case "technik": return svg(`
+        <rect x="46" y="18" width="108" height="72" rx="6" fill="#2b2f36"/>
+        <rect x="52" y="24" width="96" height="60" rx="2" fill="#0f1a2b"/>
+        ${[0, 1, 2, 3, 4, 5].map(i => `<rect class="a-bar" style="animation-delay:${i * .15}s;transform-origin:0 78px" x="${60 + i * 14}" y="${70 - i * 7}" width="9" height="${8 + i * 7}" rx="1.5" fill="#2ed47a"/>`).join("")}
+        <path d="M32 92 h136 l-8 12 H40 Z" fill="#c4c9d0"/><rect x="88" y="92" width="24" height="4" rx="2" fill="#9aa1aa"/>
+        <rect class="a-shine" x="60" y="24" width="10" height="60" fill="#ffffff" opacity=".07" transform="skewX(-20)"/>`);
+      default: return svg(`
+        <g class="a-coin"><circle cx="100" cy="20" r="10" fill="#f2c14e"/><text x="100" y="24.5" text-anchor="middle" font-size="12" font-weight="800" fill="#a77a14">€</text></g>
+        <g class="a-bob">
+          <ellipse cx="100" cy="76" rx="50" ry="34" fill="#f29bb0"/>
+          <path d="M78 46 l6 -14 l12 10 Z" fill="#e8869e"/>
+          <ellipse cx="150" cy="78" rx="10" ry="12" fill="#e8869e"/><circle cx="147" cy="75" r="2" fill="#a24d62"/><circle cx="153" cy="80" r="2" fill="#a24d62"/>
+          <circle cx="128" cy="64" r="3" fill="#2b2f36"/>
+          <rect x="88" y="42" width="24" height="4" rx="2" fill="#a24d62"/>
+          ${[72, 92, 112, 128].map(x => `<rect x="${x}" y="100" width="10" height="16" rx="3" fill="#e8869e"/>`).join("")}
+          <path d="M50 70 c-10 -2 -12 8 -4 10" stroke="#e8869e" stroke-width="3" fill="none"/>
+        </g>`);
+    }
+  }
+  const artHtml = g => g.photo
+    ? `<img class="a-photo" src="${esc(g.photo)}" alt="${esc(g.name || "Sparziel")}">`
+    : goalArt(g.cat || guessCat(g.name));
+
+  function goalProgress(g) {
+    const target = +g.target || 0, saved = +g.saved || 0, pct = target ? Math.min(100, saved / target * 100) : 0;
+    const eta = goalEta(g), now = ym(new Date()), f = FREQ[g.freq] || FREQ.monthly;
+    const pausedNow = goalPausedIn(g, now);
+    let when;
+    switch (eta.state) {
+      case "done": when = `<span class="up" style="font-weight:700">Ziel erreicht</span>`; break;
+      case "notarget": when = "Lege einen Zielbetrag fest."; break;
+      case "norate": when = "Lege einen Sparbetrag fest, dann siehst du, wann du das Ziel erreichst."; break;
+      case "paused": when = "Sparpause ohne Enddatum: Solange sie läuft, gibt es kein Zieldatum."; break;
+      case "far": when = "Mit dieser Rate dauert es über 100 Jahre."; break;
+      default: when = `Noch <strong>${duration(eta.months)}</strong> · voraussichtlich ${monthName(eta.key)}`;
+    }
+    return `
+      <div class="g-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Fortschritt ${esc(g.name)}">
+        <span class="g-fill ${eta.state === "done" ? "done" : ""}" style="--w:${pct.toFixed(1)}%"></span>
+        <span class="g-pct">${pct.toLocaleString("de-DE", { maximumFractionDigits: pct < 10 ? 1 : 0 })} %</span>
+      </div>
+      <div class="g-nums"><span><strong>${fmt(saved)}</strong> von ${fmt(target)}</span><span class="muted">noch ${fmt(Math.max(0, target - saved))}</span></div>
+      <p class="g-when">${when}</p>
+      <p class="hint">${+g.rate ? `${fmt(g.rate)} ${f.label}` : "Kein Sparbetrag"}${pausedNow ? ` · <span class="down">Sparpause${g.pause.until ? ` bis ${monthName(g.pause.until)}` : ""}</span>` : g.pause && g.pause.from > now ? ` · Pause ab ${monthName(g.pause.from)}` : ""}</p>`;
+  }
+
+  function renderGoals() {
+    const goals = state.goals || [];
+    const tSaved = goals.reduce((a, g) => a + (+g.saved || 0), 0), tTarget = goals.reduce((a, g) => a + (+g.target || 0), 0);
+    const monthly = monthGoals(ym(new Date()));
+    $("view").innerHTML = `
+      <section class="hero">
+        <span class="cap">Für deine Ziele gespart</span>
+        <span class="big" id="gTot">${fmt(tSaved)}</span>
+        <span class="muted" style="font-size:.9rem" id="gTotSub">${goals.length ? `von ${fmt(tTarget)} · ${fmt(monthly)} pro Monat` : "Noch kein Sparziel angelegt"}</span>
+      </section>
+      ${goals.map(g => goalCard(g)).join("")}
+      ${goals.length ? "" : `<div class="goal"><div class="goal-art">${goalArt("uhr")}</div>
+        <p class="hint">Lege fest, worauf du sparst: ein Auto, ein Haus, eine Uhr, einen Anzug oder eine Reise. Du siehst dann, wie weit du bist und wann du das Ziel erreichst.</p></div>`}
+      <div class="card"><button class="add" id="addGoal">Neues Sparziel</button></div>`;
+  }
+  function goalCard(g) {
+    const editing = ui.editGoal === g.id, now = ym(new Date()), pausedNow = goalPausedIn(g, now);
+    const pmode = !g.pause ? "none" : g.pause.until ? "until" : "open";
+    return `<article class="goal" data-goal="${g.id}">
+      <div class="goal-art" id="ga-${g.id}">${artHtml(g)}</div>
+      <div class="goal-head">
+        <span class="grow"><span class="g-title" id="gt-${g.id}">${esc(g.name || "Neues Sparziel")}</span><span class="sub" id="gc-${g.id}">${esc(GOAL_CATS[g.cat]?.label || "Sonstiges")}</span></span>
+      </div>
+      <div id="gp-${g.id}" style="display:grid;gap:8px">${goalProgress(g)}</div>
+      <div class="row-actions">
+        ${goalDone(g) ? "" : `<button class="btn" id="gd-${g.id}" data-gdeposit="${g.id}" ${+g.rate ? "" : "disabled"}>+ ${fmt(g.rate)} eingezahlt</button>
+        <button class="btn soft" data-gpausetoggle="${g.id}">${pausedNow || pmode === "open" ? "Sparen fortsetzen" : "Sparpause"}</button>`}
+        <button class="btn soft" data-gedit="${g.id}">${editing ? "Fertig" : "Bearbeiten"}</button>
+      </div>
+      ${editing ? `<div class="goal-edit">
+        <div class="card">
+          <div class="field"><label for="gn-${g.id}">Worauf sparst du?</label></div>
+          <input class="in" id="gn-${g.id}" data-gfield="name" placeholder="z. B. Omega Seamaster 300M" value="${esc(g.name)}" style="padding-bottom:12px">
+        </div>
+        <div class="chips" role="group" aria-label="Art des Ziels">${Object.entries(GOAL_CATS).map(([k, c]) => `<button class="chip" data-gcat="${k}" aria-pressed="${g.cat === k}">${c.label}</button>`).join("")}</div>
+        <div class="card">
+          <div class="field"><label for="gz-${g.id}">Zielbetrag</label><input class="in amt" id="gz-${g.id}" data-gfield="target" inputmode="decimal" placeholder="0,00" value="${esc(showNum(g.target))}"><span class="euro">€</span></div>
+          <div class="field"><label for="gs-${g.id}">Bereits gespart</label><input class="in amt" id="gs-${g.id}" data-gfield="saved" inputmode="decimal" placeholder="0,00" value="${esc(showNum(g.saved))}"><span class="euro">€</span></div>
+          <div class="field"><label for="gr-${g.id}">Sparbetrag</label><input class="in amt" id="gr-${g.id}" data-gfield="rate" inputmode="decimal" placeholder="0,00" value="${esc(showNum(g.rate))}"><span class="euro">€</span></div>
+        </div>
+        <span class="label-s">Wie regelmäßig sparst du?</span>
+        <div class="chips" role="group" aria-label="Rhythmus">${Object.entries(FREQ).map(([k, f]) => `<button class="chip" data-gfreq="${k}" aria-pressed="${(g.freq || "monthly") === k}">${f.label}</button>`).join("")}</div>
+        <span class="label-s">Sparpause</span>
+        <div class="seg" role="group" aria-label="Sparpause">
+          ${[["none", "Keine"], ["until", "Bis Monat"], ["open", "Unbefristet"]].map(([k, l]) => `<button data-gpmode="${k}" aria-pressed="${pmode === k}">${l}</button>`).join("")}
+        </div>
+        ${pmode === "until" ? `<div class="card"><div class="field"><label for="gu-${g.id}">Sparen wieder ab</label>
+          <select class="in sel" id="gu-${g.id}" data-gpuntil="${g.id}">${Array.from({ length: 36 }, (_, i) => addMonths(now, i + 1)).map(k => `<option value="${k}" ${g.pause.until === k ? "selected" : ""}>${monthName(k)}</option>`).join("")}</select></div></div>` : ""}
+        ${pmode !== "none" ? `<p class="hint">Pause ab ${monthName(g.pause.from)}. In der Pause wird nichts für dieses Ziel zurückgelegt, das Zieldatum verschiebt sich entsprechend.</p>` : ""}
+        <span class="label-s">Bild</span>
+        <div class="row-actions">
+          <label class="btn soft" for="gf-${g.id}" style="cursor:pointer">${g.photo ? "Anderes Foto" : "Eigenes Foto wählen"}</label>
+          <input type="file" id="gf-${g.id}" data-gphoto="${g.id}" accept="image/*" hidden>
+          ${g.photo ? `<button class="btn soft" data-gnophoto="${g.id}">Illustration verwenden</button>` : ""}
+        </div>
+        <div class="row-actions" id="gdel-${g.id}"><button class="btn danger" data-gdelete="${g.id}">Sparziel löschen</button></div>
+      </div>` : ""}
+    </article>`;
+  }
+  function liveGoals(g) {
+    const p = $("gp-" + g.id); if (p) p.innerHTML = goalProgress(g);
+    const t = $("gt-" + g.id); if (t) t.textContent = g.name || "Neues Sparziel";
+    const c = $("gc-" + g.id); if (c) c.textContent = GOAL_CATS[g.cat]?.label || "Sonstiges";
+    const d = $("gd-" + g.id); if (d) { d.textContent = `+ ${fmt(g.rate)} eingezahlt`; d.disabled = !(+g.rate > 0); }
+    const goals = state.goals || [];
+    $("gTot").textContent = fmt(goals.reduce((a, x) => a + (+x.saved || 0), 0));
+    $("gTotSub").textContent = `von ${fmt(goals.reduce((a, x) => a + (+x.target || 0), 0))} · ${fmt(monthGoals(ym(new Date())))} pro Monat`;
+  }
+  function loadPhoto(file, g) {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, 480 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      g.photo = c.toDataURL("image/jpeg", 0.75);
+      URL.revokeObjectURL(url); render(); changed();
+    };
+    img.onerror = () => URL.revokeObjectURL(url);
+    img.src = url;
+  }
+
   // Monat für Monat: Einzahlung am Monatsende, geplante Reduzierungen/Pausen werden berücksichtigt
   function project(e, months, idx = monthIndex()) {
     const r = Math.pow(1 + (+e.ret || 0) / 100, 1 / 12) - 1, now = ym(new Date());
@@ -410,7 +720,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   }
 
   // ---------- Ansichten ----------
-  const TITLES = { overview: "Übersicht", expenses: "Ausgaben", savings: "Sparen", analysis: "Analyse", data: "Daten & Backup" };
+  const TITLES = { overview: "Übersicht", expenses: "Ausgaben", savings: "Sparen", goals: "Ziele", analysis: "Analyse", data: "Daten & Backup" };
   const IN_CLAUDE = !!window.claude?.use;
   let installEvt = null;
   window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installEvt = e; if (ui.tab === "data") render(); });
@@ -422,7 +732,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     });
     $("pageTitle").textContent = TITLES[ui.tab];
     if (!TITLES[ui.tab]) ui.tab = "overview";
-    ({ overview: renderOverview, expenses: renderExpenses, savings: renderSavings, analysis: renderAnalysis, data: renderData })[ui.tab]();
+    ({ overview: renderOverview, expenses: renderExpenses, savings: renderSavings, analysis: renderAnalysis, goals: renderGoals, data: renderData })[ui.tab]();
   }
 
   function windowChips() {
@@ -454,7 +764,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     const total = c.salary || 1;
     const share = v => Math.max(0, Math.min(100, v / total * 100));
     let tot = { salary: 0, out: 0, save: 0, rest: 0 };
-    ms.forEach(k => { const x = monthCalc(w, k); tot.salary += x.salary; tot.out += x.fixed + x.extras; tot.save += x.save; tot.rest += x.rest; });
+    ms.forEach(k => { const x = monthCalc(w, k); tot.salary += x.salary; tot.out += x.fixed + x.extras; tot.save += x.save + x.goals; tot.rest += x.rest; });
 
     $("view").innerHTML = `
       ${depotHero("ov")}
@@ -464,16 +774,16 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
           <div class="stat"><span class="k">Gehalt</span><span class="v">${fmt(c.salary)}</span></div>
           <div class="stat"><span class="k">Frei verfügbar</span><span class="v ${c.rest < 0 ? "down" : "up"}">${fmt(c.rest)}</span></div>
           <div class="stat"><span class="k">Ausgaben</span><span class="v">${fmt(c.fixed + c.extras)}</span></div>
-          <div class="stat"><span class="k">Sparen (ETFs)</span><span class="v">${fmt(c.save)}</span></div>
+          <div class="stat"><span class="k">Sparen (ETFs + Ziele)</span><span class="v">${fmt(c.save + c.goals)}</span></div>
         </div>
         <div class="bar" aria-hidden="true">
           <span style="width:${share(c.fixed + c.extras)}%;background:var(--down)"></span>
-          <span style="width:${share(c.save)}%;background:var(--ink)"></span>
+          <span style="width:${share(c.save + c.goals)}%;background:var(--ink)"></span>
           <span style="width:${share(Math.max(0, c.rest))}%;background:var(--up)"></span>
         </div>
         <div class="muted" style="font-size:.8rem;display:flex;gap:14px;flex-wrap:wrap">
           <span><span class="down">■</span> Ausgaben ${Math.round(share(c.fixed + c.extras))} %</span>
-          <span>■ Sparen ${Math.round(share(c.save))} %</span>
+          <span>■ Sparen ${Math.round(share(c.save + c.goals))} %</span>
           <span><span class="up">■</span> Frei ${Math.round(share(Math.max(0, c.rest)))} %</span>
         </div>
       </section>
@@ -492,6 +802,13 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
           <div class="stat"><span class="k">4 Monate gespart</span><span class="v">${fmt(tot.save)}</span></div>
         </div>
       </section>
+      ${(state.goals || []).length ? `<section class="section">
+        <div class="section-head"><h2>Deine Sparziele</h2><button class="chip" data-tab="goals">Ansehen</button></div>
+        <div class="list">${state.goals.map(g => { const t = +g.target || 0, pct = t ? Math.min(100, (+g.saved || 0) / t * 100) : 0, eta = goalEta(g); return `<button class="item link" data-tab="goals" style="display:grid;gap:8px">
+          <span style="display:flex;justify-content:space-between;gap:10px"><span style="font-weight:700">${esc(g.name || "Sparziel")}</span><span style="font-weight:700">${Math.round(pct)} %</span></span>
+          <span class="meter"><span style="width:${pct.toFixed(1)}%;background:var(--up)"></span></span>
+          <span class="sub muted" style="font-size:.82rem">${fmt(g.saved)} von ${fmt(t)}${eta.state === "eta" ? ` · noch ${duration(eta.months)}` : eta.state === "done" ? " · erreicht" : eta.state === "paused" ? " · pausiert" : ""}</span></button>`; }).join("")}</div>
+      </section>` : ""}
       <section class="section">
         <div class="section-head"><h2>Deine ETFs</h2><button class="chip" data-tab="savings">Bearbeiten</button></div>
         <div class="list">${state.etfs.map(e => { const p = project(e, ui.horizon); return `<div class="item">
@@ -568,7 +885,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     const w = activeWin(), key = selMonth(), c = monthCalc(w, key);
     $("exRest").textContent = fmt(c.rest);
     $("exRest").className = "big" + (c.rest < 0 ? " down" : "");
-    $("exBreak").textContent = `${fmt(c.salary)} Gehalt − ${fmt(c.fixed)} monatlich − ${fmt(c.extras)} einmalig − ${fmt(c.save)} Sparen`;
+    $("exBreak").textContent = `${fmt(c.salary)} Gehalt − ${fmt(c.fixed)} monatlich − ${fmt(c.extras)} einmalig − ${fmt(c.save)} ETFs${c.goals ? ` − ${fmt(c.goals)} Sparziele` : ""}`;
     $("fixedSum").textContent = fmt(c.fixed);
     $("extraSum").textContent = fmt(c.extras);
     const h = $("saveHint");
@@ -834,6 +1151,17 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       const m = monthData(activeWin(), t.dataset.key);
       m.save ||= { mode: "reduced", rates: {} }; m.save.rates ||= {};
       m.save.rates[t.dataset.srate] = parseNum(t.value);
+    } else if (t.dataset.gfield) {
+      const g = (state.goals || []).find(x => x.id === t.closest(".goal")?.dataset.goal); if (!g) return;
+      g[t.dataset.gfield] = t.dataset.gfield === "name" ? t.value : parseNum(t.value);
+      if (t.dataset.gfield === "name" && !g.catManual) {
+        const c = guessCat(t.value);
+        if (c !== g.cat) { g.cat = c; if (!g.photo) $("ga-" + g.id).innerHTML = goalArt(c); document.querySelectorAll(`.goal[data-goal="${g.id}"] [data-gcat]`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.gcat === c))); }
+      }
+      liveGoals(g); changed(); return;
+    } else if (t.dataset.gpuntil) {
+      const g = (state.goals || []).find(x => x.id === t.dataset.gpuntil); if (!g?.pause) return;
+      g.pause.until = t.value; liveGoals(g); changed(); return;
     } else if (t.dataset.efield) {
       const et = state.etfs.find(x => x.id === t.closest(".etf").dataset.etf); if (!et) return;
       et[t.dataset.efield] = t.dataset.efield === "name" ? t.value : parseNum(t.value);
@@ -857,6 +1185,25 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       if (state.avoid[t.dataset.avoid] === t.dataset.level) delete state.avoid[t.dataset.avoid]; else state.avoid[t.dataset.avoid] = t.dataset.level;
       render(); changed(); return;
     }
+    const goalOf = id => (state.goals || []).find(x => x.id === (id || t.closest(".goal")?.dataset.goal));
+    if (t.dataset.gedit) { ui.editGoal = ui.editGoal === t.dataset.gedit ? null : t.dataset.gedit; render(); return; }
+    if (t.dataset.gdeposit) { const g = goalOf(t.dataset.gdeposit); g.saved = Math.round(((+g.saved || 0) + (+g.rate || 0)) * 100) / 100; render(); changed(); return; }
+    if (t.dataset.gpausetoggle) {
+      const g = goalOf(t.dataset.gpausetoggle), now = ym(new Date());
+      g.pause = goalPausedIn(g, now) || (g.pause && !g.pause.until) ? null : { from: now, until: null };
+      render(); changed(); return;
+    }
+    if (t.dataset.gcat) { const g = goalOf(); g.cat = t.dataset.gcat; g.catManual = true; render(); changed(); return; }
+    if (t.dataset.gfreq) { const g = goalOf(); g.freq = t.dataset.gfreq; render(); changed(); return; }
+    if (t.dataset.gpmode) {
+      const g = goalOf(), now = ym(new Date()), from = g.pause?.from && g.pause.from <= now ? g.pause.from : now;
+      g.pause = t.dataset.gpmode === "none" ? null : { from, until: t.dataset.gpmode === "until" ? (g.pause?.until || addMonths(now, 3)) : null };
+      render(); changed(); return;
+    }
+    if (t.dataset.gnophoto) { delete goalOf(t.dataset.gnophoto).photo; render(); changed(); return; }
+    if (t.dataset.gdelete) { $("gdel-" + t.dataset.gdelete).innerHTML = `<span>Wirklich löschen?</span><button class="btn danger" data-gdelyes="${t.dataset.gdelete}">Löschen</button><button class="btn soft" data-grender="1">Abbrechen</button>`; return; }
+    if (t.dataset.grender) { render(); return; }
+    if (t.dataset.gdelyes) { state.goals = state.goals.filter(x => x.id !== t.dataset.gdelyes); ui.editGoal = null; render(); changed(); return; }
     if (t.dataset.hz) { ui.horizon = +t.dataset.hz; saveUi(); render(); return; }
     if (t.dataset.win) { state.active = t.dataset.win; ui.month = null; render(); changed(); return; }
     if (t.dataset.month) { ui.month = t.dataset.month; saveUi(); render(); return; }
@@ -877,6 +1224,10 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       case "delNo": render(); break;
       case "delYes": state.windows = state.windows.filter(x => x.id !== activeWin().id); state.active = sortedWins()[0].id; ui.month = null; render(); changed(); break;
       case "clearExample": state = emptyState(); render(); changed(); break;
+      case "addGoal": {
+        const g = { id: uid(), name: "", cat: "sonstiges", target: 0, saved: 0, rate: 0, freq: "monthly", pause: null };
+        (state.goals ||= []).push(g); ui.editGoal = g.id; render(); focusLater("gn-" + g.id); changed(); break;
+      }
       case "exportCopy": copyExport(); break;
       case "exportFile": {
         const a = document.createElement("a");
@@ -901,6 +1252,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   });
 
   document.addEventListener("change", e => {
+    if (e.target.dataset?.gphoto && e.target.files?.[0]) { const g = (state.goals || []).find(x => x.id === e.target.dataset.gphoto); if (g) loadPhoto(e.target.files[0], g); return; }
     if (e.target.id !== "importFile" || !e.target.files?.[0]) return;
     e.target.files[0].text().then(text => {
       const plan = parseImport(text);
