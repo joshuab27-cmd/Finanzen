@@ -178,6 +178,7 @@ nav.tabs .inner { max-width: 560px; margin: 0 auto; display: grid; grid-template
 select.in.sel { flex: 0 0 auto; width: auto; text-align: right; font-weight: 700; appearance: none; }
 .btn[disabled] { opacity: .45; cursor: default; }
 .a-sec { transform-origin: 100px 62px; transform-box: view-box; animation: a-spin 60s linear infinite; }
+.a-subsec { transform-box: view-box; animation: a-spin 60s linear infinite; }
 .a-float { animation: a-float 5s ease-in-out infinite; }
 .a-shine { animation: a-shine 4.5s ease-in-out infinite; }
 .a-wheel { transform-box: view-box; animation: a-spin .7s linear infinite; }
@@ -451,8 +452,212 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     return parts.join(" und ") || "weniger als 1 Monat";
   }
 
+  // ---------- Uhrenmodelle (nachgezeichnete Gestaltungsmerkmale, ohne Logos) ----------
+  const WATCH_MODELS = {
+    auto: { label: "Automatisch" },
+    seamaster: { label: "Omega Seamaster 300M", color: "blau", colors: ["blau", "schwarz"] },
+    submariner: { label: "Rolex Submariner", color: "schwarz", colors: ["schwarz", "gruen", "blau"] },
+    blackbay: { label: "Tudor Black Bay", color: "bordeaux", colors: ["bordeaux", "blau", "schwarz", "gruen"] },
+    gmt: { label: "Rolex GMT-Master II", color: "pepsi", colors: ["pepsi", "batman"] },
+    speedmaster: { label: "Omega Speedmaster", color: "schwarz", colors: ["schwarz"] },
+    datejust: { label: "Rolex Datejust", color: "silber", colors: ["silber", "blau", "schwarz", "gruen"] },
+    diver: { label: "Taucheruhr allgemein", color: "blau", colors: ["blau"] },
+  };
+  const WATCH_COLORS = { auto: "Automatisch", blau: "Blau", schwarz: "Schwarz", gruen: "Grün", bordeaux: "Bordeaux", silber: "Silber", pepsi: "Rot/Blau", batman: "Schwarz/Blau" };
+  function detectWatch(name) {
+    const n = String(name || "").toLowerCase();
+    if (/speedmaster|moonwatch/.test(n)) return "speedmaster";
+    if (/seamaster|diver 300|planet ocean/.test(n)) return "seamaster";
+    if (/gmt|pepsi|batman/.test(n)) return "gmt";
+    if (/datejust|day-?date/.test(n)) return "datejust";
+    if (/submariner|\bsub\b|hulk|kermit|starbucks/.test(n)) return "submariner";
+    if (/black ?bay|bb ?58|fifty-?eight|pelagos/.test(n)) return "blackbay";
+    if (/rolex/.test(n)) return "submariner";
+    if (/omega/.test(n)) return "seamaster";
+    if (/tudor/.test(n)) return "blackbay";
+    return "diver";
+  }
+  function detectColor(name) {
+    const n = String(name || "").toLowerCase();
+    if (/pepsi/.test(n)) return "pepsi";
+    if (/batman|batgirl/.test(n)) return "batman";
+    if (/grün|gruen|green|hulk|kermit|starbucks/.test(n)) return "gruen";
+    if (/bordeaux|burgund|weinrot|\brot\b|\bred\b/.test(n)) return "bordeaux";
+    if (/blau|blue|navy/.test(n)) return "blau";
+    if (/schwarz|black(?! ?bay)/.test(n)) return "schwarz";
+    if (/silber|silver|weiß|weiss|white/.test(n)) return "silber";
+    return null;
+  }
+  function watchSpec(g) {
+    const model = g?.watch?.model && g.watch.model !== "auto" && WATCH_MODELS[g.watch.model] ? g.watch.model : detectWatch(g?.name);
+    const m = WATCH_MODELS[model];
+    let color = g?.watch?.color && g.watch.color !== "auto" ? g.watch.color : detectColor(g?.name);
+    if (!m.colors.includes(color)) color = m.color;
+    return { model, color };
+  }
+  const WATCH_PAL = {
+    seamaster: { blau: { d1: "#2a63b8", d2: "#0f3170", wave: "#4a82d0", bz: "#122c66" }, schwarz: { d1: "#2a2b2f", d2: "#0d0d0f", wave: "#3d3e44", bz: "#151518" } },
+    submariner: { schwarz: { d1: "#1b1b1e", d2: "#050506", bz: "#0f0f12" }, gruen: { d1: "#14874d", d2: "#053a20", bz: "#0d5f36" }, blau: { d1: "#2a52b8", d2: "#0d2160", bz: "#1b3f9a" } },
+    blackbay: { bordeaux: { d1: "#222", d2: "#030303", bz: "#6d1e27" }, blau: { d1: "#2b4c85", d2: "#0f1f3f", bz: "#22406f" }, schwarz: { d1: "#222", d2: "#030303", bz: "#151515" }, gruen: { d1: "#235a40", d2: "#0b2418", bz: "#1b4a33" } },
+    gmt: { pepsi: { d1: "#1b1b1e", d2: "#050506", top: "#b3262d", bot: "#1d3b85", gh: "#d0333a" }, batman: { d1: "#1b1b1e", d2: "#050506", top: "#151619", bot: "#1d3b85", gh: "#2b62de" } },
+    speedmaster: { schwarz: { d1: "#1d1d20", d2: "#060607", bz: "#0f0f11" } },
+    datejust: { silber: { d1: "#f1f3f5", d2: "#b3b9c1", ink: "#3b3f45" }, blau: { d1: "#3b68c4", d2: "#132e6b", ink: "#e8edf6" }, schwarz: { d1: "#2a2b2f", d2: "#0b0b0d", ink: "#e8edf6" }, gruen: { d1: "#3f8a63", d2: "#123a26", ink: "#e8edf6" } },
+  };
+
+  function watchArt(g, spec = watchSpec(g)) {
+    const { model, color } = spec, P = WATCH_PAL[model][color], id = "w" + String(g?.id || "x").replace(/\W/g, "");
+    const d = new Date(), sec = d.getSeconds() + d.getMilliseconds() / 1000;
+    const minA = (d.getMinutes() + sec / 60) * 6, hourA = ((d.getHours() % 12) + d.getMinutes() / 60) * 30;
+    const gmtA = (d.getHours() + d.getMinutes() / 60) * 15;
+    const C = 62, X = 100, rot = a => `transform="rotate(${a} ${X} ${C})"`;
+    const gilt = model === "blackbay", lume = gilt ? "#efe0bd" : "#f2efe3", trim = gilt ? "#d6b06a" : "#e9edf2";
+    const range = (n, f) => Array.from({ length: n }, (_, i) => f(i)).join("");
+
+    // Armband
+    const linkCols = { submariner: [12, 20, 12], gmt: [12, 20, 12], blackbay: [13, 18, 13], seamaster: [11, 5, 6, 5, 11], speedmaster: [11, 5, 6, 5, 11], datejust: [10, 6, 8, 6, 10], diver: [12, 20, 12] }[model];
+    const bracelet = (y0, y1) => {
+      let x = 78, out = "";
+      linkCols.forEach((w, i) => {
+        const polished = linkCols.length === 3 ? i === 1 : i % 2 === 1;
+        out += `<rect x="${x}" y="${y0}" width="${w}" height="${y1 - y0}" fill="url(#${id}-${polished ? "pol" : "br"})"/>`;
+        for (let y = y0 + 8; y < y1; y += 9) out += `<path d="M${x} ${y}h${w}" stroke="#6f7782" stroke-width=".7" opacity=".7"/>`;
+        if (model === "blackbay" && !polished) for (let y = y0 + 4; y < y1; y += 9) out += `<circle cx="${x + (i === 0 ? 2.2 : w - 2.2)}" cy="${y}" r=".9" fill="#6f7782"/>`;
+        x += w;
+      });
+      return out;
+    };
+
+    // Lünette
+    const ann = (r1, r2, a1, a2, fill) => {
+      const p = (r, a) => [X + r * Math.sin(a * Math.PI / 180), C - r * Math.cos(a * Math.PI / 180)];
+      const [x1, y1] = p(r2, a1), [x2, y2] = p(r2, a2), [x3, y3] = p(r1, a2), [x4, y4] = p(r1, a1), big = a2 - a1 > 180 ? 1 : 0;
+      return `<path d="M${x1} ${y1} A${r2} ${r2} 0 ${big} 1 ${x2} ${y2} L${x3} ${y3} A${r1} ${r1} 0 ${big} 0 ${x4} ${y4} Z" fill="${fill}"/>`;
+    };
+    const num = (txt, a, r, col, size = 5.6) => `<text x="${X}" y="${C - r + size * 0.36}" ${rot(a)} text-anchor="middle" font-size="${size}" font-weight="700" fill="${col}" font-family="Manrope, Arial, sans-serif">${txt}</text>`;
+    let bezel = "";
+    if (["submariner", "seamaster", "blackbay", "diver"].includes(model)) {
+      const nc = gilt ? "#d9b56f" : "#eef1f5";
+      bezel = `<circle cx="${X}" cy="${C}" r="45.2" fill="${P.bz}"/>`
+        + range(14, i => `<rect x="${X - .35}" y="${C - 44}" width=".7" height="2.6" fill="${nc}" ${rot((i + 1) * 6)}/>`)
+        + [15, 25, 35, 45, 55].map(m => `<rect x="${X - .9}" y="${C - 44.3}" width="1.8" height="4.6" fill="${nc}" ${rot(m * 6)}/>`).join("")
+        + [10, 20, 30, 40, 50].map(m => num(m, m * 6, 42, nc)).join("")
+        + `<path d="M${X - 4.2} ${C - 44.6}h8.4l-4.2 6z" fill="${gilt ? "#c9302c" : nc}"/>`
+        + (model === "submariner" ? `<circle cx="${X}" cy="${C - 42.6}" r="1.2" fill="${lume}" stroke="#9aa1aa" stroke-width=".4"/>` : "");
+    } else if (model === "gmt") {
+      bezel = ann(38.2, 45.2, -90, 90, P.top) + ann(38.2, 45.2, 90, 270, P.bot)
+        + range(11, i => num((i + 1) * 2, (i + 1) * 30, 42, "#eef1f5", 5.2))
+        + range(12, i => `<rect x="${X - .5}" y="${C - 44}" width="1" height="2.2" fill="#eef1f5" ${rot(i * 30 + 15)}/>`)
+        + `<path d="M${X - 4.2} ${C - 44.6}h8.4l-4.2 6z" fill="#eef1f5"/>`;
+    } else if (model === "speedmaster") {
+      bezel = `<circle cx="${X}" cy="${C}" r="45.2" fill="${P.bz}"/>`
+        + [[400, 54], [300, 72], [200, 108], [150, 144], [120, 180], [100, 216], [90, 240], [80, 270], [70, 308.6]].map(([v, a]) => num(v, a, 41.8, "#eef1f5", 4.4) + `<rect x="${X - .3}" y="${C - 45}" width=".6" height="1.6" fill="#eef1f5" ${rot(a)}/>`).join("")
+        + `<circle cx="${X + 31}" cy="${C - 31}" r="1.1" fill="#eef1f5"/>`;
+    } else if (model === "datejust") {
+      bezel = `<circle cx="${X}" cy="${C}" r="45.6" fill="#c9ced5"/>` + range(72, i => `<rect x="${X - 1}" y="${C - 45.6}" width="2" height="7" fill="${i % 2 ? "#f6f7f9" : "#8a929c"}" ${rot(i * 5)}/>`);
+    }
+
+    // Zifferblatt
+    const dialR = model === "datejust" ? 38 : 38.2;
+    let dial = `<circle cx="${X}" cy="${C}" r="${dialR}" fill="url(#${id}-dial)"/>`;
+    if (model === "seamaster") dial += `<g clip-path="url(#${id}-clip)" stroke="${P.wave}" stroke-width="1.5" fill="none" opacity=".6">${range(15, i => `<path d="M58 ${26 + i * 5} q7 -3 14 0 t14 0 t14 0 t14 0 t14 0 t14 0"/>`)}</g>`;
+    if (model === "datejust") dial += `<g clip-path="url(#${id}-clip)" opacity=".07">${range(90, i => `<rect x="${X - .4}" y="${C - 38}" width=".8" height="38" fill="#fff" ${rot(i * 4)}/>`)}</g>`;
+    if (model === "speedmaster") dial += range(60, i => `<rect x="${X - .25}" y="${C - 37}" width=".5" height="${i % 5 ? 1.6 : 2.8}" fill="#e9edf2" ${rot(i * 6)}/>`);
+    const ink = model === "datejust" ? P.ink : gilt ? "#d9b56f" : "#e9edf2";
+    dial += `<rect x="${X - 7}" y="${C - 22}" width="14" height="1.6" rx=".8" fill="${ink}" opacity=".85"/><rect x="${X - 4.5}" y="${C - 19}" width="9" height="1.2" rx=".6" fill="${ink}" opacity=".6"/>`;
+    if (["submariner", "seamaster", "blackbay", "gmt"].includes(model)) dial += `<rect x="${X - 6}" y="${C + (model === "seamaster" ? 10 : 15)}" width="12" height="1.3" rx=".6" fill="${ink}" opacity=".6"/><rect x="${X - 8}" y="${C + (model === "seamaster" ? 12.6 : 17.6)}" width="16" height="1.1" rx=".5" fill="${model === "submariner" && color === "schwarz" ? "#e9edf2" : ink}" opacity=".5"/>`;
+
+    // Indizes
+    const dot = a => `<circle cx="${X}" cy="${C - 30.5}" r="3.3" fill="${lume}" stroke="${trim}" stroke-width=".9" ${rot(a)}/>`;
+    const baton = (a, w = 4.2, r1 = 25, r2 = 34.5) => `<rect x="${X - w / 2}" y="${C - r2}" width="${w}" height="${r2 - r1}" rx=".6" fill="${lume}" stroke="${trim}" stroke-width=".9" ${rot(a)}/>`;
+    const tri = `<path d="M${X - 4.6} ${C - 35}h9.2l-4.6 8.5z" fill="${lume}" stroke="${trim}" stroke-width=".9" stroke-linejoin="round"/>`;
+    let marks = "";
+    if (["submariner", "gmt", "blackbay", "diver"].includes(model)) {
+      const date3 = model !== "blackbay";
+      marks = range(12, i => i === 0 ? tri : i === 3 ? (date3 ? "" : baton(90)) : (i === 6 || i === 9) ? baton(i * 30) : dot(i * 30));
+    } else if (model === "seamaster") {
+      marks = range(12, i => i === 6 ? "" : i === 0
+        ? `<rect x="${X - 5.4}" y="${C - 35}" width="3.6" height="9" rx=".6" fill="${lume}" stroke="${trim}" stroke-width=".8"/><rect x="${X + 1.8}" y="${C - 35}" width="3.6" height="9" rx=".6" fill="${lume}" stroke="${trim}" stroke-width=".8"/>`
+        : baton(i * 30, 3.6, 27, 35));
+    } else if (model === "speedmaster") {
+      marks = range(12, i => [3, 6, 9].includes(i) ? "" : `<rect x="${X - .9}" y="${C - 35}" width="1.8" height="7" fill="#f2f4f7" ${rot(i * 30)}/>`)
+        + [[124, 62], [100, 86], [76, 62]].map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="8.6" fill="#0c0c0e" stroke="#3a3b40" stroke-width=".6"/>`
+          + range(12, i => `<rect x="${cx - .25}" y="${cy - 8.2}" width=".5" height="1.6" fill="#e9edf2" transform="rotate(${i * 30} ${cx} ${cy})"/>`)).join("")
+        + `<rect x="${123.5}" y="${55.5}" width="1" height="7" fill="#f2f4f7" transform="rotate(${minA * 0.5 % 360} 124 62)"/>`
+        + `<rect x="${99.5}" y="${79.5}" width="1" height="7" fill="#f2f4f7" transform="rotate(${hourA} 100 86)"/>`
+        + `<g class="a-subsec" style="transform-origin:76px 62px;animation-delay:-${sec.toFixed(2)}s"><rect x="75.5" y="55" width="1" height="8.5" fill="#f2f4f7"/></g>`;
+    } else if (model === "datejust") {
+      const mc = color === "silber" ? "#8d949d" : "#e3e7ec";
+      marks = range(12, i => i === 3 ? "" : i === 0
+        ? `<rect x="${X - 3.8}" y="${C - 35}" width="2.6" height="8" fill="${mc}"/><rect x="${X + 1.2}" y="${C - 35}" width="2.6" height="8" fill="${mc}"/>`
+        : `<rect x="${X - 1.4}" y="${C - 35}" width="2.8" height="8" fill="${mc}" ${rot(i * 30)}/>`);
+    }
+
+    // Datum
+    const day = d.getDate();
+    const dateWin = (a, cyc) => {
+      const r = 27.5, cx = X + r * Math.sin(a * Math.PI / 180), cy = C - r * Math.cos(a * Math.PI / 180);
+      return `<rect x="${cx - 4.6}" y="${cy - 3.6}" width="9.2" height="7.2" rx=".6" fill="#f7f7f5" stroke="${trim}" stroke-width=".6"/>
+        <text x="${cx}" y="${cy + (cyc ? 2.7 : 2)}" text-anchor="middle" font-size="${cyc ? 7.6 : 5.6}" font-weight="700" fill="#111" font-family="Arial, sans-serif">${day}</text>
+        ${cyc ? `<rect x="${cx - 6.6}" y="${cy - 5.4}" width="13.2" height="10.8" rx="3.4" fill="#ffffff" opacity=".16" stroke="#ffffff" stroke-opacity=".55" stroke-width=".6"/>` : ""}`;
+    };
+    if (["submariner", "gmt", "datejust"].includes(model)) marks += dateWin(90, true);
+    if (model === "seamaster") marks += dateWin(180, false);
+
+    // Zeiger
+    const handCol = gilt ? "#dcb873" : model === "datejust" && color === "silber" ? "#7d848e" : "#eef1f5";
+    const sword = (a, len, w, skeleton) => `<g ${rot(a)}><path d="M${X - w / 2} ${C + 5} L${X - w / 2} ${C - len * .72} L${X} ${C - len} L${X + w / 2} ${C - len * .72} L${X + w / 2} ${C + 5} Z" fill="${skeleton ? "none" : handCol}" stroke="${handCol}" stroke-width="${skeleton ? 1.1 : .4}"/>
+      <path d="M${X - w / 2 + 1} ${C - len * (skeleton ? .45 : .3)} L${X - w / 2 + 1} ${C - len * .72} L${X} ${C - len + 2} L${X + w / 2 - 1} ${C - len * .72} L${X + w / 2 - 1} ${C - len * (skeleton ? .45 : .3)} Z" fill="${lume}"/></g>`;
+    const mercedes = a => `<g ${rot(a)}><rect x="${X - 1.1}" y="${C - 11}" width="2.2" height="16" fill="${handCol}"/>
+      <circle cx="${X}" cy="${C - 14.6}" r="3.9" fill="${lume}" stroke="${handCol}" stroke-width="1.3"/>
+      <path d="M${X} ${C - 14.6} V${C - 18.5} M${X} ${C - 14.6} L${X - 3.4} ${C - 12.6} M${X} ${C - 14.6} L${X + 3.4} ${C - 12.6}" stroke="${handCol}" stroke-width=".9"/>
+      <path d="M${X - 1.5} ${C - 18.2} L${X} ${C - 22} L${X + 1.5} ${C - 18.2} Z" fill="${handCol}"/></g>`;
+    const snowflake = a => `<g ${rot(a)}><rect x="${X - 1.3}" y="${C - 12}" width="2.6" height="17" fill="${handCol}"/>
+      <rect x="${X - 3.6}" y="${C - 18.6}" width="7.2" height="7.2" fill="${lume}" stroke="${handCol}" stroke-width="1"/>
+      <path d="M${X - 1.4} ${C - 18.6} L${X} ${C - 22} L${X + 1.4} ${C - 18.6} Z" fill="${handCol}"/></g>`;
+    const batonH = (a, len, w) => `<g ${rot(a)}><rect x="${X - w / 2}" y="${C - len}" width="${w}" height="${len + 5}" rx=".5" fill="${handCol}"/><rect x="${X - w / 2 + .6}" y="${C - len + 1}" width="${w - 1.2}" height="${len * .6}" fill="${lume}"/></g>`;
+    let hands = "";
+    if (model === "submariner" || model === "gmt") hands = mercedes(hourA) + sword(minA, 31, 3.4);
+    else if (model === "seamaster") hands = sword(hourA, 20, 5, true) + sword(minA, 30, 4.4, true);
+    else if (model === "blackbay") hands = snowflake(hourA) + sword(minA, 31, 3.6);
+    else if (model === "speedmaster") hands = batonH(hourA, 20, 2.6) + batonH(minA, 30, 2.2);
+    else hands = batonH(hourA, 20, 3) + batonH(minA, 30, 2.4);
+    if (model === "gmt") hands += `<g ${rot(gmtA)}><rect x="${X - .5}" y="${C - 30}" width="1" height="34" fill="${P.gh}"/><path d="M${X - 3.2} ${C - 29} L${X} ${C - 35.5} L${X + 3.2} ${C - 29} Z" fill="${P.gh}" stroke="${handCol}" stroke-width=".4"/></g>`;
+    let secHand;
+    if (model === "speedmaster") secHand = `<g ${rot(0)}><rect x="${X - .4}" y="${C - 36}" width=".8" height="44" fill="#f2f4f7"/></g>`;
+    else {
+      const tip = model === "seamaster" ? `<rect x="${X - .55}" y="${C - 36}" width="1.1" height="6" fill="#e8463c"/>` : "";
+      const lumeDot = model === "blackbay" ? `<rect x="${X - 2}" y="${C - 27.5}" width="4" height="4" fill="${lume}" stroke="${handCol}" stroke-width=".7"/>` : `<circle cx="${X}" cy="${C - 25.5}" r="2.1" fill="${lume}" stroke="${handCol}" stroke-width=".8"/>`;
+      secHand = `<g class="a-sec" style="animation-delay:-${sec.toFixed(2)}s"><rect x="${X - .45}" y="${C - 36}" width=".9" height="46" fill="${handCol}"/>${tip}${lumeDot}</g>`;
+    }
+
+    // Gehäuse
+    let extras = `<rect x="145" y="56.5" width="8.5" height="11" rx="2" fill="url(#${id}-pol)"/>` + range(4, i => `<path d="M${147 + i * 1.8} 57v10" stroke="#7d8692" stroke-width=".5"/>`);
+    if (model === "submariner" || model === "gmt") extras += `<path d="M139 50 Q151 54 151 56 L145 56 Z M139 74 Q151 70 151 68 L145 68 Z" fill="url(#${id}-br)"/>`;
+    if (model === "seamaster") extras += `<g transform="rotate(-60 100 62)"><rect x="96" y="9" width="8" height="7" rx="1.6" fill="url(#${id}-pol)"/></g>`;
+    if (model === "speedmaster") extras += [60, 120].map(a => `<g transform="rotate(${a} 100 62)"><rect x="97" y="11" width="6" height="6" rx="1" fill="url(#${id}-pol)"/></g>`).join("");
+
+    return `<svg viewBox="0 0 200 125" aria-hidden="true">
+      <defs>
+        <linearGradient id="${id}-br" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b9c0c8"/><stop offset=".5" stop-color="#d7dce1"/><stop offset="1" stop-color="#a9b0b9"/></linearGradient>
+        <linearGradient id="${id}-pol" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#9ba3ad"/><stop offset=".7" stop-color="#eef1f4"/><stop offset="1" stop-color="#8d959f"/></linearGradient>
+        <linearGradient id="${id}-case" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#99a1ab"/><stop offset="1" stop-color="#e3e7eb"/></linearGradient>
+        <radialGradient id="${id}-dial" cx=".42" cy=".35" r=".75"><stop offset="0" stop-color="${P.d1}"/><stop offset="1" stop-color="${P.d2}"/></radialGradient>
+        <clipPath id="${id}-clip"><circle cx="${X}" cy="${C}" r="${dialR}"/></clipPath>
+      </defs>
+      <g class="a-float">
+        ${bracelet(-6, 26)}${bracelet(98, 131)}
+        <path d="M76 22 Q100 12 124 22 L124 102 Q100 112 76 102 Z" fill="url(#${id}-case)"/>
+        ${extras}
+        <circle cx="${X}" cy="${C}" r="47.5" fill="url(#${id}-case)"/>
+        ${bezel}
+        ${dial}${marks}${hands}${secHand}
+        <circle cx="${X}" cy="${C}" r="2" fill="${handCol}"/>
+        <ellipse class="a-shine" cx="80" cy="45" rx="7" ry="30" fill="#ffffff" opacity=".12" transform="rotate(35 80 45)"/>
+      </g></svg>`;
+  }
+
   // Animierte Illustrationen je Art des Ziels (eigene Zeichnungen, keine Markenlogos)
-  function goalArt(cat) {
+  function goalArt(cat, g) {
     const d = new Date(), sec = d.getSeconds() + d.getMilliseconds() / 1000;
     const minA = (d.getMinutes() + sec / 60) * 6, hourA = ((d.getHours() % 12) + d.getMinutes() / 60) * 30;
     const ticks = (r1, r2, n, w, col) => Array.from({ length: n }, (_, i) => {
@@ -461,7 +666,8 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
     }).join("");
     const svg = inner => `<svg viewBox="0 0 200 125" aria-hidden="true">${inner}</svg>`;
     switch (cat) {
-      case "uhr": return svg(`
+      case "uhr": if (watchSpec(g).model !== "diver") return watchArt(g);
+        return svg(`
         <defs><clipPath id="dial"><circle cx="100" cy="62" r="33"/></clipPath>
           <linearGradient id="case" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef1f5"/><stop offset=".5" stop-color="#9aa3ae"/><stop offset="1" stop-color="#dfe3e8"/></linearGradient>
           <radialGradient id="dialg" cx=".4" cy=".35"><stop offset="0" stop-color="#2d63b5"/><stop offset="1" stop-color="#123a78"/></radialGradient></defs>
@@ -552,7 +758,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
   }
   const artHtml = g => g.photo
     ? `<img class="a-photo" src="${esc(g.photo)}" alt="${esc(g.name || "Sparziel")}">`
-    : goalArt(g.cat || guessCat(g.name));
+    : goalArt(g.cat || guessCat(g.name), g);
 
   function goalProgress(g) {
     const target = +g.target || 0, saved = +g.saved || 0, pct = target ? Math.min(100, saved / target * 100) : 0;
@@ -588,7 +794,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
         <span class="muted" style="font-size:.9rem" id="gTotSub">${goals.length ? `von ${fmt(tTarget)} · ${fmt(monthly)} pro Monat` : "Noch kein Sparziel angelegt"}</span>
       </section>
       ${goals.map(g => goalCard(g)).join("")}
-      ${goals.length ? "" : `<div class="goal"><div class="goal-art">${goalArt("uhr")}</div>
+      ${goals.length ? "" : `<div class="goal"><div class="goal-art">${goalArt("uhr", { id: "demo", name: "Seamaster 300M" })}</div>
         <p class="hint">Lege fest, worauf du sparst: ein Auto, ein Haus, eine Uhr, einen Anzug oder eine Reise. Du siehst dann, wie weit du bist und wann du das Ziel erreichst.</p></div>`}
       <div class="card"><button class="add" id="addGoal">Neues Sparziel</button></div>`;
   }
@@ -612,6 +818,7 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
           <input class="in" id="gn-${g.id}" data-gfield="name" placeholder="z. B. Omega Seamaster 300M" value="${esc(g.name)}" style="padding-bottom:12px">
         </div>
         <div class="chips" role="group" aria-label="Art des Ziels">${Object.entries(GOAL_CATS).map(([k, c]) => `<button class="chip" data-gcat="${k}" aria-pressed="${g.cat === k}">${c.label}</button>`).join("")}</div>
+        ${g.cat === "uhr" ? watchControls(g) : ""}
         <div class="card">
           <div class="field"><label for="gz-${g.id}">Zielbetrag</label><input class="in amt" id="gz-${g.id}" data-gfield="target" inputmode="decimal" placeholder="0,00" value="${esc(showNum(g.target))}"><span class="euro">€</span></div>
           <div class="field"><label for="gs-${g.id}">Bereits gespart</label><input class="in amt" id="gs-${g.id}" data-gfield="saved" inputmode="decimal" placeholder="0,00" value="${esc(showNum(g.saved))}"><span class="euro">€</span></div>
@@ -635,6 +842,17 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
         <div class="row-actions" id="gdel-${g.id}"><button class="btn danger" data-gdelete="${g.id}">Sparziel löschen</button></div>
       </div>` : ""}
     </article>`;
+  }
+  function watchHint(g) {
+    const sp = watchSpec(g);
+    return (g.watch?.model || "auto") === "auto" ? `Erkannt am Namen: ${WATCH_MODELS[sp.model].label}, ${WATCH_COLORS[sp.color]}` : "";
+  }
+  function watchControls(g) {
+    const sel = g.watch?.model || "auto", sp = watchSpec(g), csel = g.watch?.color || "auto";
+    return `<span class="label-s">Aussehen der Uhr</span>
+      <div class="chips" role="group" aria-label="Uhrenmodell">${Object.entries(WATCH_MODELS).map(([k, m]) => `<button class="chip" data-gwmodel="${k}" aria-pressed="${sel === k}">${m.label}</button>`).join("")}</div>
+      ${WATCH_MODELS[sp.model].colors.length > 1 ? `<div class="chips" role="group" aria-label="Farbe">${["auto", ...WATCH_MODELS[sp.model].colors].map(k => `<button class="chip" data-gwcolor="${k}" aria-pressed="${csel === k || (csel !== "auto" && k === "auto" && !WATCH_MODELS[sp.model].colors.includes(csel))}">${WATCH_COLORS[k]}</button>`).join("")}</div>` : ""}
+      <p class="hint" id="gwh-${g.id}">${watchHint(g)}</p>`;
   }
   function liveGoals(g) {
     const p = $("gp-" + g.id); if (p) p.innerHTML = goalProgress(g);
@@ -1156,7 +1374,16 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       g[t.dataset.gfield] = t.dataset.gfield === "name" ? t.value : parseNum(t.value);
       if (t.dataset.gfield === "name" && !g.catManual) {
         const c = guessCat(t.value);
-        if (c !== g.cat) { g.cat = c; if (!g.photo) $("ga-" + g.id).innerHTML = goalArt(c); document.querySelectorAll(`.goal[data-goal="${g.id}"] [data-gcat]`).forEach(b => b.setAttribute("aria-pressed", String(b.dataset.gcat === c))); }
+        if (c !== g.cat) {
+          g.cat = c; liveGoals(g); changed(); render();
+          const inp = $("gn-" + g.id); if (inp) { inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length); }
+          return;
+        }
+      }
+      if (t.dataset.gfield === "name" && g.cat === "uhr" && !g.photo) {
+        const spec = JSON.stringify(watchSpec(g)), art = $("ga-" + g.id);
+        if (art && art.dataset.spec !== spec) { art.dataset.spec = spec; art.innerHTML = goalArt("uhr", g); }
+        const h = $("gwh-" + g.id); if (h) h.textContent = watchHint(g);
       }
       liveGoals(g); changed(); return;
     } else if (t.dataset.gpuntil) {
@@ -1194,6 +1421,8 @@ nav.tabs button[aria-current="page"] { color: var(--ink); }
       render(); changed(); return;
     }
     if (t.dataset.gcat) { const g = goalOf(); g.cat = t.dataset.gcat; g.catManual = true; render(); changed(); return; }
+    if (t.dataset.gwmodel) { const g = goalOf(); g.watch = { ...(g.watch || {}), model: t.dataset.gwmodel }; render(); changed(); return; }
+    if (t.dataset.gwcolor) { const g = goalOf(); g.watch = { ...(g.watch || {}), color: t.dataset.gwcolor }; render(); changed(); return; }
     if (t.dataset.gfreq) { const g = goalOf(); g.freq = t.dataset.gfreq; render(); changed(); return; }
     if (t.dataset.gpmode) {
       const g = goalOf(), now = ym(new Date()), from = g.pause?.from && g.pause.from <= now ? g.pause.from : now;
