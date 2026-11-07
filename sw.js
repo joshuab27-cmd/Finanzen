@@ -1,5 +1,5 @@
 // Service Worker: hält die App offline verfügbar. Die Version wird von build.py gesetzt.
-const CACHE = "finanzplan-4b32f1c361";
+const CACHE = "finanzplan-dc0a53fa6e";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", e => {
